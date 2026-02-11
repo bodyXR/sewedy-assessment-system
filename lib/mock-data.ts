@@ -1,0 +1,136 @@
+import type { Student, Competency, Assessment } from './types'
+
+export const mockStudents: Student[] = [
+  {
+    id: '1',
+    code: 'STU001',
+    fullName: 'John Smith',
+    gradeLevel: 'Junior',
+    enrolledCompetencies: ['comp1', 'comp2'],
+  },
+  {
+    id: '2',
+    code: 'STU002',
+    fullName: 'Sarah Johnson',
+    gradeLevel: 'Wheeler',
+    enrolledCompetencies: ['comp1', 'comp3'],
+  },
+  {
+    id: '3',
+    code: 'STU003',
+    fullName: 'Michael Brown',
+    gradeLevel: 'Senior',
+    enrolledCompetencies: ['comp2', 'comp3', 'comp4'],
+  },
+  {
+    id: '4',
+    code: 'STU004',
+    fullName: 'Emily Davis',
+    gradeLevel: 'Junior',
+    enrolledCompetencies: ['comp1', 'comp4'],
+  },
+  {
+    id: '5',
+    code: 'STU005',
+    fullName: 'James Wilson',
+    gradeLevel: 'Wheeler',
+    enrolledCompetencies: ['comp2', 'comp3'],
+  },
+  {
+    id: '6',
+    code: 'STU006',
+    fullName: 'Lisa Martinez',
+    gradeLevel: 'Senior',
+    enrolledCompetencies: ['comp1', 'comp3', 'comp4'],
+  },
+  {
+    id: '7',
+    code: 'STU007',
+    fullName: 'Robert Taylor',
+    gradeLevel: 'Junior',
+    enrolledCompetencies: ['comp2', 'comp4'],
+  },
+  {
+    id: '8',
+    code: 'STU008',
+    fullName: 'Jessica Anderson',
+    gradeLevel: 'Wheeler',
+    enrolledCompetencies: ['comp1', 'comp2', 'comp3'],
+  },
+  {
+    id: '9',
+    code: 'STU009',
+    fullName: 'David Thomas',
+    gradeLevel: 'Senior',
+    enrolledCompetencies: ['comp3', 'comp4'],
+  },
+  {
+    id: '10',
+    code: 'STU010',
+    fullName: 'Amanda White',
+    gradeLevel: 'Junior',
+    enrolledCompetencies: ['comp1', 'comp2', 'comp3', 'comp4'],
+  },
+]
+
+export const mockCompetencies: Competency[] = [
+  {
+    id: 'comp1',
+    name: 'Mathematics',
+    gradeLevel: 'Junior',
+    description: 'Basic mathematical concepts and problem-solving',
+    totalStudents: 6,
+    gradeDistribution: { A: 2, B: 2, C: 1, D: 1 },
+  },
+  {
+    id: 'comp2',
+    name: 'English Language',
+    gradeLevel: 'Wheeler',
+    description: 'Reading, writing, and communication skills',
+    totalStudents: 5,
+    gradeDistribution: { A: 2, B: 2, C: 1, D: 0 },
+  },
+  {
+    id: 'comp3',
+    name: 'Science',
+    gradeLevel: 'Senior',
+    description: 'Scientific method and natural sciences',
+    totalStudents: 6,
+    gradeDistribution: { A: 2, B: 2, C: 1, D: 1 },
+  },
+  {
+    id: 'comp4',
+    name: 'Critical Thinking',
+    gradeLevel: 'Junior',
+    description: 'Analytical and problem-solving abilities',
+    totalStudents: 5,
+    gradeDistribution: { A: 3, B: 1, C: 1, D: 0 },
+  },
+]
+
+export const mockAssessments: Assessment[] = [
+  {
+    id: 'a1',
+    studentId: '1',
+    competencyId: 'comp1',
+    grade: 'A',
+    notes: 'Excellent performance',
+    createdAt: new Date('2024-12-01'),
+  },
+  {
+    id: 'a2',
+    studentId: '2',
+    competencyId: 'comp1',
+    grade: 'B',
+    notes: 'Good understanding',
+    createdAt: new Date('2024-12-05'),
+  },
+  {
+    id: 'a3',
+    studentId: '3',
+    competencyId: 'comp2',
+    grade: 'A',
+    notes: 'Outstanding work',
+    createdAt: new Date('2024-12-02'),
+  },
+]
