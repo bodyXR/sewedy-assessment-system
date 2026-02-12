@@ -1,6 +1,9 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { PageHeader } from '@/components/layout/page-header'
+import { FilterSection } from '@/components/layout/filter-section'
+import { ContentSection } from '@/components/layout/content-section'
 import { StudentsFilters } from '@/components/students/students-filters'
 import { StudentsTable } from '@/components/students/students-table'
 import { AssessmentModal } from '@/components/students/assessment-modal'
@@ -54,16 +57,12 @@ export default function StudentsPage() {
 
   return (
     <div className="flex flex-col h-full bg-background">
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
-        <div className="px-8 py-6 border-b border-border">
-          <h1 className="text-3xl font-bold text-foreground">Students</h1>
-          <p className="text-muted-foreground mt-1">
-            Showing {filteredStudents.length} student{filteredStudents.length !== 1 ? 's' : ''}
-          </p>
-        </div>
+      <PageHeader
+        title="Students"
+        description={`Manage and assess ${filteredStudents.length} student${filteredStudents.length !== 1 ? 's' : ''} across all grade levels`}
+      />
 
-        {/* Filters */}
+      <FilterSection>
         <StudentsFilters
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
@@ -74,21 +73,20 @@ export default function StudentsPage() {
           onClearFilters={handleClearFilters}
           competencies={mockCompetencies}
         />
+      </FilterSection>
 
-        {/* Table */}
-        <div className="flex-1 overflow-auto px-8 py-6">
-          <StudentsTable
-            students={paginatedStudents}
-            onAssess={handleAssess}
-            itemsPerPage={itemsPerPage}
-            onItemsPerPageChange={setItemsPerPage}
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-            totalItems={filteredStudents.length}
-          />
-        </div>
-      </div>
+      <ContentSection>
+        <StudentsTable
+          students={paginatedStudents}
+          onAssess={handleAssess}
+          itemsPerPage={itemsPerPage}
+          onItemsPerPageChange={setItemsPerPage}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          totalItems={filteredStudents.length}
+        />
+      </ContentSection>
 
       {/* Assessment Modal */}
       {selectedStudent && (
@@ -107,3 +105,4 @@ export default function StudentsPage() {
     </div>
   )
 }
+

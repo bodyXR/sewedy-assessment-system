@@ -4,6 +4,8 @@ import React from "react"
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { Loader2 } from 'lucide-react'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
@@ -50,22 +52,38 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-white to-secondary">
-      <Card className="w-full max-w-md shadow-lg">
-        <div className="p-8">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-background via-secondary to-background relative overflow-hidden">
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 -left-20 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-1/4 -right-20 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+      </div>
+
+      <Card className="w-full max-w-md mx-4 shadow-2xl border-border/50 backdrop-blur-sm bg-card/95 animate-in relative z-10">
+        <div className="p-8 lg:p-10">
           {/* Logo/Branding Area */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-lg bg-primary mb-4">
-              <span className="text-2xl font-bold text-primary-foreground">SA</span>
+            <div className="inline-flex items-center justify-center w-24 h-24 rounded-2xl bg-white mb-6 shadow-lg overflow-hidden">
+              <Image 
+                src="/logo.png" 
+                alt="Logo" 
+                width={96} 
+                height={96}
+                className="object-contain"
+              />
             </div>
-            <h1 className="text-3xl font-bold text-foreground">School Assessment</h1>
-            <p className="text-muted-foreground mt-2">Management System</p>
+            <h1 className="text-3xl lg:text-4xl font-bold tracking-tight mb-2 text-foreground">
+              Welcome Back
+            </h1>
+            <p className="text-muted-foreground text-sm lg:text-base">
+              Sign in to your assessment account
+            </p>
           </div>
 
           {/* Login Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="username" className="block text-sm font-medium text-foreground mb-2">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-2">
+              <label htmlFor="username" className="block text-sm font-semibold text-foreground">
                 Username
               </label>
               <Input
@@ -75,12 +93,12 @@ export default function LoginPage() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 disabled={isLoading}
-                className="w-full"
+                className="h-11 bg-background/50 border-border/50 focus:border-primary transition-colors"
               />
             </div>
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-foreground mb-2">
+            <div className="space-y-2">
+              <label htmlFor="password" className="block text-sm font-semibold text-foreground">
                 Password
               </label>
               <Input
@@ -90,32 +108,55 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isLoading}
-                className="w-full"
+                className="h-11 bg-background/50 border-border/50 focus:border-primary transition-colors"
               />
             </div>
 
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold h-10"
+              className="w-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-white font-semibold h-11 shadow-lg hover:shadow-xl transition-all duration-200 mt-6"
             >
-              {isLoading ? 'Signing in...' : 'Sign In'}
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Signing in...
+                </>
+              ) : (
+                'Sign In'
+              )}
             </Button>
           </form>
 
           {/* Demo Credentials Info */}
-          <div className="mt-6 p-4 bg-secondary rounded-lg">
-            <p className="text-xs text-muted-foreground font-medium mb-2">Demo Credentials:</p>
-            <p className="text-xs text-muted-foreground">
-              Username: <span className="font-mono font-semibold text-foreground">teacher</span> or{' '}
-              <span className="font-mono font-semibold text-foreground">admin</span>
+          <div className="mt-8 p-4 bg-gradient-to-r from-secondary to-muted rounded-xl border border-border/50">
+            <p className="text-xs font-semibold text-muted-foreground mb-3 uppercase tracking-wide">
+              Demo Credentials
             </p>
-            <p className="text-xs text-muted-foreground">
-              Password: <span className="font-mono font-semibold text-foreground">demo123</span>
-            </p>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Username:</span>
+                <span className="font-mono font-semibold text-foreground bg-background/50 px-3 py-1 rounded-md">
+                  teacher
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">or</span>
+                <span className="font-mono font-semibold text-foreground bg-background/50 px-3 py-1 rounded-md">
+                  admin
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-sm pt-2 border-t border-border/30">
+                <span className="text-muted-foreground">Password:</span>
+                <span className="font-mono font-semibold text-foreground bg-background/50 px-3 py-1 rounded-md">
+                  demo123
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </Card>
     </div>
   )
 }
+

@@ -3,6 +3,9 @@
 import { useState, useMemo } from 'react'
 import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { PageHeader } from '@/components/layout/page-header'
+import { FilterSection } from '@/components/layout/filter-section'
+import { ContentSection } from '@/components/layout/content-section'
 import { CompetenciesFilters } from '@/components/competencies/competencies-filters'
 import { CompetenciesTable } from '@/components/competencies/competencies-table'
 import { CompetencyModal } from '@/components/competencies/competency-modal'
@@ -78,41 +81,37 @@ export default function CompetenciesPage() {
 
   return (
     <div className="flex flex-col h-full bg-background">
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
-        <div className="px-8 py-6 border-b border-border flex items-start justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Competencies</h1>
-            <p className="text-muted-foreground mt-1">
-              Showing {filteredCompetencies.length} competenc{filteredCompetencies.length !== 1 ? 'ies' : 'y'}
-            </p>
-          </div>
+      <PageHeader
+        title="Competencies"
+        description={`Track and manage ${filteredCompetencies.length} competenc${filteredCompetencies.length !== 1 ? 'ies' : 'y'} across all grade levels`}
+        action={
           <Button
             onClick={handleAddCompetency}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold h-10 gap-2"
+            className="bg-primary hover:bg-primary/90 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-200"
           >
-            <Plus className="w-5 h-5" />
+            <Plus className="w-5 h-5 mr-2" />
             Add Competency
           </Button>
-        </div>
+        }
+      />
 
-        {/* Filters */}
+
+      <FilterSection>
         <CompetenciesFilters
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
           selectedGrade={selectedGrade}
           onGradeChange={setSelectedGrade}
         />
+      </FilterSection>
 
-        {/* Table */}
-        <div className="flex-1 overflow-auto px-8 py-6">
-          <CompetenciesTable
-            competencies={filteredCompetencies}
-            onEdit={handleEditCompetency}
-            onDelete={handleDeleteClick}
-          />
-        </div>
-      </div>
+      <ContentSection>
+        <CompetenciesTable
+          competencies={filteredCompetencies}
+          onEdit={handleEditCompetency}
+          onDelete={handleDeleteClick}
+        />
+      </ContentSection>
 
       {/* Modals */}
       <CompetencyModal
@@ -134,3 +133,4 @@ export default function CompetenciesPage() {
     </div>
   )
 }
+

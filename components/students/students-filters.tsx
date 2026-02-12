@@ -1,15 +1,9 @@
 'use client';
 
-import { X } from 'lucide-react'
+import { Search, X } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { cn } from '@/lib/utils'
 import type { Competency, GradeLevel } from '@/lib/types'
 
 interface StudentsFiltersProps {
@@ -56,52 +50,59 @@ export function StudentsFilters({
     searchQuery || selectedCompetencies.length > 0 || selectedGrades.length > 0
 
   return (
-    <div className="sticky top-0 z-10 bg-background border-b border-border px-8 py-4 space-y-4">
+    <div className="space-y-5">
       {/* Search and Grade Filters */}
       <div className="flex gap-4 items-end flex-wrap">
-        <div className="flex-1 min-w-64">
-          <label className="text-sm font-medium text-foreground mb-2 block">Search</label>
-          <Input
-            placeholder="Search by student code or name..."
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="h-10"
-          />
+        <div className="flex-1 min-w-64 space-y-2">
+          <label className="text-sm font-semibold text-foreground">Search Students</label>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by student code or name..."
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              className="pl-10 h-11 bg-background border-border focus:border-primary transition-colors"
+            />
+          </div>
         </div>
 
         {/* Grade Level Filter */}
-        <div className="flex gap-2">
-          <label className="text-sm font-medium text-foreground self-end mb-2">Grades:</label>
-          {grades.map((grade) => (
-            <Button
-              key={grade}
-              variant={selectedGrades.includes(grade) ? 'default' : 'outline'}
-              className={`h-10 ${
-                selectedGrades.includes(grade)
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-foreground border-border'
-              }`}
-              onClick={() => handleGradeToggle(grade)}
-            >
-              {grade}
-            </Button>
-          ))}
+        <div className="flex gap-2 items-end">
+          <label className="text-sm font-semibold text-foreground mb-2.5">Grade Level:</label>
+          <div className="flex gap-2">
+            {grades.map((grade) => (
+              <Button
+                key={grade}
+                variant={selectedGrades.includes(grade) ? 'default' : 'outline'}
+                className={cn(
+                  'h-11 px-5 font-semibold transition-all duration-200',
+                  selectedGrades.includes(grade)
+                    ? 'bg-primary text-white hover:bg-primary/90 shadow-md'
+                    : 'text-gray-900 bg-white border-gray-300 hover:border-primary hover:bg-gray-50'
+                )}
+                onClick={() => handleGradeToggle(grade)}
+              >
+                {grade}
+              </Button>
+            ))}
+          </div>
         </div>
       </div>
 
       {/* Competency Filter */}
-      <div className="flex gap-4 items-end flex-wrap">
-        <label className="text-sm font-medium text-foreground">Competencies:</label>
-        <div className="flex flex-wrap gap-2">
+      <div className="flex gap-4 items-start flex-wrap">
+        <label className="text-sm font-semibold text-foreground pt-2">Competencies:</label>
+        <div className="flex-1 flex flex-wrap gap-2">
           {uniqueCompetencies.map((comp) => (
             <button
               key={comp.id}
               onClick={() => handleCompetencyToggle(comp.id)}
-              className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+              className={cn(
+                'px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200',
                 selectedCompetencies.includes(comp.id)
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-secondary text-foreground hover:bg-secondary/80'
-              }`}
+                  ? 'bg-primary text-white shadow-md hover:bg-primary/90'
+                  : 'bg-white text-gray-900 border border-gray-300 hover:border-primary hover:bg-gray-50'
+              )}
             >
               {comp.name}
             </button>
@@ -113,13 +114,14 @@ export function StudentsFilters({
             variant="ghost"
             size="sm"
             onClick={onClearFilters}
-            className="text-destructive hover:text-destructive hover:bg-destructive/10 ml-auto"
+            className="text-red-600 hover:text-red-700 hover:bg-red-50 font-semibold"
           >
-            <X className="w-4 h-4 mr-1" />
-            Clear filters
+            <X className="w-4 h-4 mr-1.5" />
+            Clear All
           </Button>
         )}
       </div>
     </div>
   )
 }
+
