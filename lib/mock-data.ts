@@ -79,6 +79,12 @@ export const mockCompetencies: Competency[] = [
     name: 'Mathematics',
     gradeLevel: 'Junior',
     description: 'Basic mathematical concepts and problem-solving',
+    learningOutcomes: [
+      'Understand basic arithmetic operations',
+      'Solve linear equations',
+      'Apply geometric formulas',
+      'Interpret statistical data'
+    ],
     totalStudents: 6,
     gradeDistribution: { A: 2, B: 2, C: 1, D: 1 },
   },
@@ -87,6 +93,12 @@ export const mockCompetencies: Competency[] = [
     name: 'English Language',
     gradeLevel: 'Wheeler',
     description: 'Reading, writing, and communication skills',
+    learningOutcomes: [
+      'Identify main ideas in complex texts',
+      'Write clear and coherent essays',
+      'Use correct grammar and punctuation',
+      'Participate effectively in discussions'
+    ],
     totalStudents: 5,
     gradeDistribution: { A: 2, B: 2, C: 1, D: 0 },
   },
@@ -95,6 +107,12 @@ export const mockCompetencies: Competency[] = [
     name: 'Science',
     gradeLevel: 'Senior',
     description: 'Scientific method and natural sciences',
+    learningOutcomes: [
+      'Formulate scientific hypotheses',
+      'Conduct controlled experiments',
+      'Analyze experimental data',
+      'Explain key scientific theories'
+    ],
     totalStudents: 6,
     gradeDistribution: { A: 2, B: 2, C: 1, D: 1 },
   },
@@ -103,6 +121,12 @@ export const mockCompetencies: Competency[] = [
     name: 'Critical Thinking',
     gradeLevel: 'Junior',
     description: 'Analytical and problem-solving abilities',
+    learningOutcomes: [
+      'Identify logical fallacies',
+      'Evaluate arguments and evidence',
+      'Solve complex problems systematically',
+      'Make decision based on data'
+    ],
     totalStudents: 5,
     gradeDistribution: { A: 3, B: 1, C: 1, D: 0 },
   },

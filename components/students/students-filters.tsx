@@ -1,8 +1,13 @@
 'use client';
 
-import { Search, X } from 'lucide-react'
+import { Search, Filter, X } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
 import type { Competency, GradeLevel } from '@/lib/types'
 
@@ -46,81 +51,101 @@ export function StudentsFilters({
     )
   }
 
-  const hasActiveFilters =
-    searchQuery || selectedCompetencies.length > 0 || selectedGrades.length > 0
+  const activeFiltersCount = selectedCompetencies.length + selectedGrades.length
 
   return (
-    <div className="space-y-5">
-      {/* Search and Grade Filters */}
-      <div className="flex gap-4 items-end flex-wrap">
-        <div className="flex-1 min-w-64 space-y-2">
-          <label className="text-sm font-semibold text-foreground">Search Students</label>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Search by student code or name..."
-              value={searchQuery}
-              onChange={(e) => onSearchChange(e.target.value)}
-              className="pl-10 h-11 bg-background border-border focus:border-primary transition-colors"
-            />
-          </div>
-        </div>
-
-        {/* Grade Level Filter */}
-        <div className="flex gap-2 items-end">
-          <label className="text-sm font-semibold text-foreground mb-2.5">Grade Level:</label>
-          <div className="flex gap-2">
-            {grades.map((grade) => (
-              <Button
-                key={grade}
-                variant={selectedGrades.includes(grade) ? 'default' : 'outline'}
-                className={cn(
-                  'h-11 px-5 font-semibold transition-all duration-200',
-                  selectedGrades.includes(grade)
-                    ? 'bg-primary text-white hover:bg-primary/90 shadow-md'
-                    : 'text-gray-900 bg-white border-gray-300 hover:border-primary hover:bg-gray-50'
-                )}
-                onClick={() => handleGradeToggle(grade)}
-              >
-                {grade}
-              </Button>
-            ))}
-          </div>
-        </div>
+    <div className="flex gap-4 items-center">
+      <div className="relative flex-1">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Input
+          placeholder="Search by student code or name..."
+          value={searchQuery}
+          onChange={(e) => onSearchChange(e.target.value)}
+          className="pl-10 h-11 bg-background border-border focus:border-primary transition-colors"
+        />
       </div>
 
-      {/* Competency Filter */}
-      <div className="flex gap-4 items-start flex-wrap">
-        <label className="text-sm font-semibold text-foreground pt-2">Competencies:</label>
-        <div className="flex-1 flex flex-wrap gap-2">
-          {uniqueCompetencies.map((comp) => (
-            <button
-              key={comp.id}
-              onClick={() => handleCompetencyToggle(comp.id)}
-              className={cn(
-                'px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200',
-                selectedCompetencies.includes(comp.id)
-                  ? 'bg-primary text-white shadow-md hover:bg-primary/90'
-                  : 'bg-white text-gray-900 border border-gray-300 hover:border-primary hover:bg-gray-50'
-              )}
-            >
-              {comp.name}
-            </button>
-          ))}
-        </div>
-
-        {hasActiveFilters && (
+      <Popover>
+        <PopoverTrigger asChild>
           <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClearFilters}
-            className="text-red-600 hover:text-red-700 hover:bg-red-50 font-semibold"
+            variant="outline"
+            className="h-11 px-4 gap-2 border-border hover:bg-secondary"
           >
-            <X className="w-4 h-4 mr-1.5" />
-            Clear All
+            <Filter className="w-4 h-4" />
+            Filters
+            {activeFiltersCount > 0 && (
+              <span className="bg-primary text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full">
+                {activeFiltersCount}
+              </span>
+            )}
           </Button>
-        )}
-      </div>
+        </PopoverTrigger>
+        <PopoverContent className="w-96 p-4 max-h-[80vh] overflow-y-auto" align="end">
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h4 className="font-semibold text-foreground">Filters</h4>
+              {activeFiltersCount > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onClearFilters}
+                  className="h-8 px-2 text-destructive hover:text-destructive/90"
+                >
+                  Clear All
+                </Button>
+              )}
+            </div>
+
+            {/* Grade Level Filter */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">
+                Grade Level
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {grades.map((grade) => (
+                  <Button
+                    key={grade}
+                    size="sm"
+                    variant={selectedGrades.includes(grade) ? 'default' : 'outline'}
+                    className={cn(
+                      'transition-all duration-200',
+                      selectedGrades.includes(grade)
+                        ? 'bg-primary text-white hover:bg-primary/90'
+                        : 'text-foreground hover:border-primary hover:bg-secondary'
+                    )}
+                    onClick={() => handleGradeToggle(grade)}
+                  >
+                    {grade}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* Competency Filter */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">
+                Competencies
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {uniqueCompetencies.map((comp) => (
+                  <Button
+                    key={comp.id}
+                    onClick={() => handleCompetencyToggle(comp.id)}
+                    className={cn(
+                      'px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 border',
+                      selectedCompetencies.includes(comp.id)
+                        ? 'bg-primary text-white border-primary shadow-sm hover:bg-primary/90'
+                        : 'bg-background text-foreground border-border hover:border-primary hover:bg-secondary'
+                    )}
+                  >
+                    {comp.name}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </PopoverContent>
+      </Popover>
     </div>
   )
 }

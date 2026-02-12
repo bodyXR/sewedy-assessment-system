@@ -14,6 +14,7 @@ export interface Competency {
   name: string
   gradeLevel: GradeLevel
   description: string
+  learningOutcomes: string[]
   totalStudents: number
   gradeDistribution: {
     A: number

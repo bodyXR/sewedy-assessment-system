@@ -62,20 +62,16 @@ export default function LoginPage() {
       <Card className="w-full max-w-md mx-4 shadow-2xl border-border/50 backdrop-blur-sm bg-card/95 animate-in relative z-10">
         <div className="p-8 lg:p-10">
           {/* Logo/Branding Area */}
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-24 h-24 rounded-2xl bg-white mb-6 shadow-lg overflow-hidden">
+          <div className="text-center flex flex-col items-center mb-8">
               <Image 
                 src="/logo.png" 
                 alt="Logo" 
-                width={96} 
+                width={200} 
                 height={96}
                 className="object-contain"
               />
-            </div>
-            <h1 className="text-3xl lg:text-4xl font-bold tracking-tight mb-2 text-foreground">
-              Welcome Back
-            </h1>
-            <p className="text-muted-foreground text-sm lg:text-base">
+
+            <p className="text-muted-foreground text-sm mt-5 lg:text-base">
               Sign in to your assessment account
             </p>
           </div>

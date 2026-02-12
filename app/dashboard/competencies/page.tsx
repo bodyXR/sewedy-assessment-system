@@ -46,6 +46,7 @@ export default function CompetenciesPage() {
     name: string
     gradeLevel: GradeLevel
     description: string
+    learningOutcomes: string[]
   }) => {
     if (editingCompetency) {
       setCompetencies(
