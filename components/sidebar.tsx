@@ -1,16 +1,15 @@
 "use client";
 
 import { useRouter, usePathname } from "next/navigation";
-import { Users, BookOpen, LogOut } from "lucide-react";
+import { LogOut, Calendar, LayoutList, UserCircle } from "lucide-react";
 import Image from "next/image";
-import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
 
 export function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
-  const { logout, user } = useAuth();
+  const { logout } = useAuth();
 
   const handleLogout = () => {
     logout();
@@ -19,80 +18,74 @@ export function Sidebar() {
 
   const navItems = [
     {
+      label: "Dashboard",
+      href: "/dashboard/attendance",
+      icon: Calendar,
+    },
+    {
+      label: "Bulk Assess",
+      href: "/dashboard/bulk-assess",
+      icon: LayoutList,
+    },
+    {
       label: "Students",
       href: "/dashboard/students",
-      icon: Users,
+      icon: UserCircle,
     },
     {
       label: "Competencies",
       href: "/dashboard/competencies",
-      icon: BookOpen,
+      icon: LayoutList,
     },
   ];
 
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 flex flex-col h-screen shadow-sm">
+    <aside className="w-80 bg-white flex flex-col h-screen">
       {/* Logo Area */}
-      <div className="p-6 border-b border-gray-200">
+      <div className="p-6">
         <div className="flex items-center gap-3">
           <Image
             src="/logo.png"
             alt="Logo"
-            width={120}
-            height={60}
+            width={140}
+            height={70}
             className="object-contain"
           />
         </div>
       </div>
 
       {/* Navigation Items */}
-      <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
+      <nav className="flex-1 px-6 py-4 space-y-2 overflow-y-auto">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
           return (
-            <Button
+            <button
               key={item.href}
-              variant="ghost"
               className={cn(
-                "w-full justify-start gap-3 h-11 px-3 rounded-lg transition-all duration-200 font-medium text-sm",
+                "w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all duration-200 font-medium text-base",
                 isActive
-                  ? "bg-primary text-white hover:text-wite hover:bg-primary/90 shadow-sm"
-                  : "text-gray-700 hover:text-gray-900 hover:bg-gray-100",
+                  ? "bg-gradient-to-r from-[#E40000] to-[#ff002f] text-white shadow-lg"
+                  : "text-gray-400 hover:text-gray-600 hover:bg-gray-50",
               )}
               onClick={() => router.push(item.href)}
             >
-              <Icon className="w-5 h-5" />
+              <Icon className="w-6 h-6" />
               {item.label}
-            </Button>
+            </button>
           );
         })}
       </nav>
 
       {/* Logout Button */}
-      <div className="p-4 border-t border-gray-200">
-        {/* User Info */}
-        {user && (
-          <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-200">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-semibold text-sm shadow-sm">
-              {user.username.charAt(0).toUpperCase()}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-gray-900 truncate capitalize">
-                {user.username}
-              </p>
-              <p className="text-xs text-gray-500 capitalize">{user.role}</p>
-            </div>
-          </div>
-        )}
-        <Button
-          variant="ghost"
-          className="w-full justify-start gap-3 h-11 px-3 rounded-lg text-gray-700 hover:text-red-600 hover:bg-red-50 transition-all duration-200 font-medium text-sm"
+      <div className="p-6">
+        <button
+          className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-red-500 hover:bg-red-50 transition-all duration-200 font-medium text-base"
           onClick={handleLogout}
         >
-          <LogOut className="w-5 h-5" />
+          <LogOut className="w-6 h-6" />
           Logout
-        </Button>
+        </button>
       </div>
     </aside>
   );

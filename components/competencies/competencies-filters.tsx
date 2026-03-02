@@ -1,21 +1,24 @@
-'use client'
+"use client";
 
-import { Search, Filter, X } from 'lucide-react'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
+import { Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover'
-import { cn } from '@/lib/utils'
-import type { GradeLevel } from '@/lib/types'
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import type { GradeLevel } from "@/lib/types";
 
 interface CompetenciesFiltersProps {
-  searchQuery: string
-  onSearchChange: (value: string) => void
-  selectedGrade: GradeLevel | 'All'
-  onGradeChange: (value: GradeLevel | 'All') => void
+  readonly searchQuery: string;
+  readonly onSearchChange: (value: string) => void;
+  readonly selectedGrade: GradeLevel | "All";
+  readonly onGradeChange: (value: GradeLevel | "All") => void;
 }
 
 export function CompetenciesFilters({
@@ -24,79 +27,100 @@ export function CompetenciesFilters({
   selectedGrade,
   onGradeChange,
 }: CompetenciesFiltersProps) {
-  const grades: (GradeLevel | 'All')[] = ['All', 'Junior', 'Wheeler', 'Senior']
-  const activeFiltersCount = selectedGrade !== 'All' ? 1 : 0
+  const grades: (GradeLevel | "All")[] = ["All", "Junior", "Wheeler", "Senior"];
+  const activeFiltersCount =
+    (selectedGrade !== "All" ? 1 : 0) + (searchQuery.trim() ? 1 : 0);
 
   return (
-    <div className="flex gap-4 items-center">
-      <div className="relative flex-1">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input
-          placeholder="Search by competency name..."
-          value={searchQuery}
-          onChange={(e) => onSearchChange(e.target.value)}
-          className="pl-10 h-11 bg-background border-border focus:border-primary transition-colors"
-        />
+    <Card className="p-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        {/* Search */}
+        <div>
+          <div className="text-sm font-medium text-gray-700 mb-2">
+            Search Competencies
+          </div>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Input
+              type="text"
+              placeholder="Search by competency name..."
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </div>
+
+        {/* Grade Level */}
+        <div>
+          <div className="text-sm font-medium text-gray-700 mb-2">
+            Filter by Grade Level
+          </div>
+          <Select value={selectedGrade} onValueChange={onGradeChange}>
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {grades.map((grade) => (
+                <SelectItem key={grade} value={grade}>
+                  {grade}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            className="h-11 px-4 gap-2 border-border hover:bg-secondary"
-          >
-            <Filter className="w-4 h-4" />
-            Filters
-            {activeFiltersCount > 0 && (
-              <span className="bg-primary text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full">
-                {activeFiltersCount}
-              </span>
-            )}
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-80 p-4" align="end">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h4 className="font-semibold text-foreground">Filters</h4>
-              {selectedGrade !== 'All' && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onGradeChange('All')}
-                  className="h-8 px-2 text-destructive hover:text-destructive/90"
-                >
-                  Clear
-                </Button>
-              )}
-            </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">
-                Grade Level
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {grades.map((grade) => (
-                  <Button
-                    key={grade}
-                    size="sm"
-                    variant={selectedGrade === grade ? 'default' : 'outline'}
-                    className={cn(
-                      'transition-all duration-200',
-                      selectedGrade === grade
-                        ? 'bg-primary text-white hover:bg-primary/90'
-                        : 'text-foreground hover:border-primary hover:bg-secondary'
-                    )}
-                    onClick={() => onGradeChange(grade)}
-                  >
-                    {grade}
-                  </Button>
-                ))}
-              </div>
-            </div>
+      {/* Active Filters & Reset */}
+      {activeFiltersCount > 0 && (
+        <div className="pt-4 border-t space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-gray-700">
+              Active Filters:
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onGradeChange("All")}
+              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              Clear All
+            </Button>
           </div>
-        </PopoverContent>
-      </Popover>
-    </div>
-  )
+          <div className="flex flex-wrap gap-2">
+            {/* Search Filter */}
+            {searchQuery.trim() && (
+              <Badge
+                variant="secondary"
+                className="px-3 py-1 flex items-center gap-2 bg-green-100 text-green-800 hover:bg-green-200"
+              >
+                <span>Search: "{searchQuery}"</span>
+                <button
+                  onClick={() => onSearchChange("")}
+                  className="hover:text-green-900"
+                >
+                  ×
+                </button>
+              </Badge>
+            )}
+            {/* Grade Filter */}
+            {selectedGrade !== "All" && (
+              <Badge
+                variant="secondary"
+                className="px-3 py-1 flex items-center gap-2 bg-blue-100 text-blue-800 hover:bg-blue-200"
+              >
+                <span>Grade: {selectedGrade}</span>
+                <button
+                  onClick={() => onGradeChange("All")}
+                  className="hover:text-blue-900"
+                >
+                  ×
+                </button>
+              </Badge>
+            )}
+          </div>
+        </div>
+      )}
+    </Card>
+  );
 }
-
