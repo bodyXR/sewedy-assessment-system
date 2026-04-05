@@ -19,7 +19,7 @@ export function Sidebar() {
   const navItems = [
     {
       label: "Dashboard",
-      href: "/dashboard/attendance",
+      href: "/dashboard",
       icon: Calendar,
     },
     {

@@ -3,16 +3,21 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 
-import type { Student } from "@/lib/types";
+import type { Student, Competency } from "@/lib/types";
 import { DataTable } from "@/components/ui/data-table";
 import { SortableHeader } from "@/components/ui/sortable-header";
 
 interface StudentsTableProps {
   students: Student[];
+  competencies: Competency[];
   onAssess: (student: Student) => void;
 }
 
-export function StudentsTable({ students, onAssess }: StudentsTableProps) {
+export function StudentsTable({
+  students,
+  competencies,
+  onAssess,
+}: StudentsTableProps) {
   const columns: ColumnDef<Student>[] = [
     {
       accessorKey: "code",
@@ -44,20 +49,6 @@ export function StudentsTable({ students, onAssess }: StudentsTableProps) {
           {row.getValue("gradeLevel")}
         </span>
       ),
-    },
-    {
-      id: "enrolledCompetencies",
-      accessorFn: (row) => row.enrolledCompetencies.length,
-      header: ({ column }) => (
-        <SortableHeader column={column} title="Enrolled Competencies" />
-      ),
-      cell: ({ row }) => {
-        return (
-          <div className="text-foreground">
-            {row.getValue("enrolledCompetencies")}
-          </div>
-        );
-      },
     },
     {
       id: "actions",

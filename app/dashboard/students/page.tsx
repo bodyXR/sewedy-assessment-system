@@ -105,7 +105,11 @@ export default function StudentsPage() {
       </div>
 
       {/* Students Table */}
-      <StudentsTable students={filteredStudents} onAssess={handleAssess} />
+      <StudentsTable
+        students={filteredStudents}
+        competencies={mockCompetencies}
+        onAssess={handleAssess}
+      />
     </div>
   );
 }
