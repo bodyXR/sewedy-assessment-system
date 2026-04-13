@@ -56,7 +56,8 @@ function resolveRoleContext(
 
   return {
     accountRole,
-    class: assignment.class,
+    grade: assignment.grade,
+    classGroup: assignment.classGroup,
     competency: assignment.competency,
     assignedRole: assignment.assignedRole,
     cycleId: activeCycle.id,

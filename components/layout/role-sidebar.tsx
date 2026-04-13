@@ -109,6 +109,11 @@ export function RoleSidebar() {
               {roleContext.competency}
             </span>
           )}
+          {roleContext?.classGroup && (
+            <span className="text-xs font-semibold bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full shrink-0">
+              {roleContext.classGroup}
+            </span>
+          )}
         </div>
         {roleContext?.cycleName && (
           <p className="text-xs text-gray-400 mt-1 truncate">

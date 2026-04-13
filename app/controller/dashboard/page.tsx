@@ -111,7 +111,7 @@ export default function ControllerDashboard() {
         return false;
       if (filterCompetency !== "All" && ra.competency !== filterCompetency)
         return false;
-      if (filterClass !== "All" && ra.class !== filterClass) return false;
+      if (filterClass !== "All" && ra.grade !== filterClass) return false;
       return true;
     });
     const assessorProgress = assessors.map((ra) => {
@@ -120,12 +120,12 @@ export default function ControllerDashboard() {
         (r) => r.assessorId === ra.userId,
       );
       const assessorStudents = filteredStudents.filter(
-        (s) => s.competency === ra.competency && s.gradeLevel === ra.class,
+        (s) => s.competency === ra.competency && s.gradeLevel === ra.grade,
       );
       return {
         name: assessorUser?.fullName ?? ra.userId,
         competency: ra.competency,
-        class: ra.class,
+        classGroup: ra.classGroup,
         submitted: assessorResults.filter((r) => r.status !== "draft").length,
         total: assessorStudents.length,
       };
@@ -226,7 +226,8 @@ export default function ControllerDashboard() {
                 <div className="flex items-center justify-between text-sm mb-1">
                   <span className="font-medium text-gray-700">{ap.name}</span>
                   <span className="text-gray-500">
-                    {ap.competency} · {ap.class} · {ap.submitted}/{ap.total}
+                    {ap.competency} · {ap.classGroup} · {ap.submitted}/
+                    {ap.total}
                   </span>
                 </div>
                 <div className="w-full bg-gray-100 rounded-full h-2">

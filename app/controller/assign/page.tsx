@@ -16,7 +16,15 @@ import { mockUsers, mockRoleAssignments, mockCycles } from "@/lib/mock-data";
 import { useToast } from "@/hooks/use-toast";
 import type { GradeLevel, CompetencyType, AssignedRole } from "@/lib/types";
 
-const CLASSES: GradeLevel[] = ["Junior", "Wheeler", "Senior"];
+const GRADES: GradeLevel[] = ["Junior", "Wheeler", "Senior"];
+
+// Classes per grade
+const CLASSES_BY_GRADE: Record<GradeLevel, string[]> = {
+  Junior: ["J1", "J2", "J3", "J4"],
+  Wheeler: ["W1", "W2", "W3"],
+  Senior: ["S1", "S2", "S3", "S4"],
+};
+
 const COMPETENCIES: CompetencyType[] = [
   "Structural",
   "Civil",
@@ -27,7 +35,8 @@ const COMPETENCIES: CompetencyType[] = [
 const ROLES: AssignedRole[] = ["assessor", "verifier"];
 
 interface LocalAssignment {
-  class: GradeLevel | "";
+  grade: GradeLevel | "";
+  classGroup: string;
   competency: CompetencyType | "";
   assignedRole: AssignedRole | "";
 }
@@ -53,7 +62,8 @@ export default function AssignPage() {
         (ra) => ra.userId === u.id && ra.cycleId === cycleId,
       );
       init[u.id] = {
-        class: existing?.class ?? "",
+        grade: existing?.grade ?? "",
+        classGroup: existing?.classGroup ?? "",
         competency: existing?.competency ?? "",
         assignedRole: existing?.assignedRole ?? "",
       };
@@ -77,19 +87,32 @@ export default function AssignPage() {
     field: keyof LocalAssignment,
     value: string,
   ) => {
-    setAssignments((prev) => ({
-      ...prev,
-      [userId]: { ...prev[userId], [field]: value as never },
-    }));
+    setAssignments((prev) => {
+      const updated = { ...prev[userId], [field]: value as never };
+      // Reset classGroup when grade changes or when switching to verifier
+      if (field === "grade") updated.classGroup = "";
+      if (field === "assignedRole" && value === "verifier")
+        updated.classGroup = "";
+      return { ...prev, [userId]: updated };
+    });
     setSaved((prev) => ({ ...prev, [userId]: false }));
   };
 
   const handleSave = (userId: string) => {
     const a = assignments[userId];
-    if (!a.class || !a.competency || !a.assignedRole) {
+    const needsClass = a.assignedRole === "assessor";
+    if (
+      !a.grade ||
+      !a.competency ||
+      !a.assignedRole ||
+      (needsClass && !a.classGroup)
+    ) {
       toast({
         title: "Incomplete",
-        description: "Please fill all fields before saving.",
+        description:
+          needsClass && !a.classGroup
+            ? "Please select a class for the assessor."
+            : "Please fill all fields before saving.",
         variant: "destructive",
       });
       return;
@@ -108,7 +131,7 @@ export default function AssignPage() {
       <div className="bg-gradient-to-r from-red-500 to-red-600 text-white p-8 rounded-2xl">
         <h1 className="text-2xl font-bold mb-1">Role Assignment</h1>
         <p className="text-red-100 text-sm">
-          Assign class, competency, and role to each engineer per cycle
+          Assign grade, class, competency, and role to each engineer per cycle
         </p>
       </div>
 
@@ -161,22 +184,25 @@ export default function AssignPage() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
-                <th className="text-left px-6 py-4 font-semibold text-gray-600">
+                <th className="text-left px-5 py-4 font-semibold text-gray-600">
                   User
                 </th>
-                <th className="text-left px-6 py-4 font-semibold text-gray-600">
+                <th className="text-left px-5 py-4 font-semibold text-gray-600">
                   Account Role
                 </th>
-                <th className="text-left px-6 py-4 font-semibold text-gray-600">
+                <th className="text-left px-5 py-4 font-semibold text-gray-600">
+                  Grade
+                </th>
+                <th className="text-left px-5 py-4 font-semibold text-gray-600">
                   Class
                 </th>
-                <th className="text-left px-6 py-4 font-semibold text-gray-600">
+                <th className="text-left px-5 py-4 font-semibold text-gray-600">
                   Competency
                 </th>
-                <th className="text-left px-6 py-4 font-semibold text-gray-600">
+                <th className="text-left px-5 py-4 font-semibold text-gray-600">
                   Assigned Role
                 </th>
-                <th className="text-left px-6 py-4 font-semibold text-gray-600">
+                <th className="text-left px-5 py-4 font-semibold text-gray-600">
                   Action
                 </th>
               </tr>
@@ -185,33 +211,65 @@ export default function AssignPage() {
               {assignableUsers.map((user) => {
                 const a = assignments[user.id];
                 const isSaved = saved[user.id];
+                const availableClasses = a.grade
+                  ? (CLASSES_BY_GRADE[a.grade as GradeLevel] ?? [])
+                  : [];
+
                 return (
                   <tr
                     key={user.id}
                     className="hover:bg-gray-50/50 transition-colors"
                   >
-                    <td className="px-6 py-4">
+                    <td className="px-5 py-4">
                       <p className="font-medium text-gray-900">
                         {user.fullName}
                       </p>
                       <p className="text-xs text-gray-400">{user.email}</p>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-5 py-4">
                       <Badge variant="outline" className="capitalize">
                         {user.accountRole}
                       </Badge>
                     </td>
-                    <td className="px-6 py-4">
+
+                    {/* Grade */}
+                    <td className="px-5 py-4">
                       <Select
-                        value={a.class}
-                        onValueChange={(v) => handleChange(user.id, "class", v)}
+                        value={a.grade}
+                        onValueChange={(v) => handleChange(user.id, "grade", v)}
                         disabled={isCycleClosed}
                       >
-                        <SelectTrigger className="w-32 h-8 text-xs">
-                          <SelectValue placeholder="Class" />
+                        <SelectTrigger className="w-28 h-8 text-xs">
+                          <SelectValue placeholder="Grade" />
                         </SelectTrigger>
                         <SelectContent>
-                          {CLASSES.map((c) => (
+                          {GRADES.map((g) => (
+                            <SelectItem key={g} value={g}>
+                              {g}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </td>
+
+                    {/* Class — filtered by grade */}
+                    <td className="px-5 py-4">
+                      <Select
+                        value={a.classGroup}
+                        onValueChange={(v) =>
+                          handleChange(user.id, "classGroup", v)
+                        }
+                        disabled={
+                          isCycleClosed ||
+                          !a.grade ||
+                          a.assignedRole === "verifier"
+                        }
+                      >
+                        <SelectTrigger className="w-24 h-8 text-xs">
+                          <SelectValue placeholder={a.grade ? "Class" : "—"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableClasses.map((c) => (
                             <SelectItem key={c} value={c}>
                               {c}
                             </SelectItem>
@@ -219,7 +277,9 @@ export default function AssignPage() {
                         </SelectContent>
                       </Select>
                     </td>
-                    <td className="px-6 py-4">
+
+                    {/* Competency */}
+                    <td className="px-5 py-4">
                       <Select
                         value={a.competency}
                         onValueChange={(v) =>
@@ -239,7 +299,9 @@ export default function AssignPage() {
                         </SelectContent>
                       </Select>
                     </td>
-                    <td className="px-6 py-4">
+
+                    {/* Assigned Role */}
+                    <td className="px-5 py-4">
                       <Select
                         value={a.assignedRole}
                         onValueChange={(v) =>
@@ -247,7 +309,7 @@ export default function AssignPage() {
                         }
                         disabled={isCycleClosed}
                       >
-                        <SelectTrigger className="w-32 h-8 text-xs">
+                        <SelectTrigger className="w-28 h-8 text-xs">
                           <SelectValue placeholder="Role" />
                         </SelectTrigger>
                         <SelectContent>
@@ -263,7 +325,8 @@ export default function AssignPage() {
                         </SelectContent>
                       </Select>
                     </td>
-                    <td className="px-6 py-4">
+
+                    <td className="px-5 py-4">
                       {isSaved ? (
                         <div className="flex items-center gap-1.5 text-green-600 text-xs font-medium">
                           <CheckCircle className="w-4 h-4" />

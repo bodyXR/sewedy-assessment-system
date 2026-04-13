@@ -114,19 +114,19 @@ export default function StatisticsPage() {
         if (filterCycle !== "all" && ra.cycleId !== filterCycle) return false;
         if (filterCompetency !== "All" && ra.competency !== filterCompetency)
           return false;
-        if (filterClass !== "All" && ra.class !== filterClass) return false;
+        if (filterClass !== "All" && ra.grade !== filterClass) return false;
         return ra.assignedRole === "assessor";
       })
       .map((ra) => {
         const user = mockUsers.find((u) => u.id === ra.userId);
         const raResults = submitted.filter((r) => r.assessorId === ra.userId);
         const raStudents = students.filter(
-          (s) => s.competency === ra.competency && s.gradeLevel === ra.class,
+          (s) => s.competency === ra.competency && s.gradeLevel === ra.grade,
         );
         return {
           name: user?.fullName ?? ra.userId,
           competency: ra.competency,
-          class: ra.class,
+          classGroup: ra.classGroup,
           assessed: raResults.length,
           total: raStudents.length,
         };
@@ -393,7 +393,7 @@ export default function StatisticsPage() {
               <div>
                 <p className="font-medium text-gray-900 text-sm">{a.name}</p>
                 <p className="text-xs text-gray-400">
-                  {a.competency} · {a.class}
+                  {a.competency} · {a.classGroup}
                 </p>
               </div>
               <div className="flex items-center gap-4">

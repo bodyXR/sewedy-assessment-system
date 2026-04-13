@@ -13,9 +13,30 @@ import {
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { mockCycles, mockStudents, mockResults } from "@/lib/mock-data";
 import { useToast } from "@/hooks/use-toast";
-import type { Cycle, CycleStatus } from "@/lib/types";
+import type {
+  Cycle,
+  CycleStatus,
+  GradeLevel,
+  CompetencyType,
+} from "@/lib/types";
+
+const GRADES: GradeLevel[] = ["Junior", "Wheeler", "Senior"];
+const SPECIALIZATIONS: CompetencyType[] = [
+  "Structural",
+  "Civil",
+  "Electrical",
+  "Mechanical",
+  "Software",
+];
 
 const statusConfig: Record<CycleStatus, { label: string; color: string }> = {
   upcoming: { label: "Upcoming", color: "bg-blue-100 text-blue-700" },
@@ -32,6 +53,8 @@ export default function CyclesPage() {
     name: "",
     startDate: "",
     endDate: "",
+    grade: "" as GradeLevel | "",
+    specialization: "" as CompetencyType | "",
   });
 
   const handleCreate = () => {
@@ -50,9 +73,17 @@ export default function CyclesPage() {
       createdBy: "u1",
       startDate: newCycle.startDate,
       endDate: newCycle.endDate,
+      grade: newCycle.grade || undefined,
+      specialization: newCycle.specialization || undefined,
     };
     setCycles((prev) => [created, ...prev]);
-    setNewCycle({ name: "", startDate: "", endDate: "" });
+    setNewCycle({
+      name: "",
+      startDate: "",
+      endDate: "",
+      grade: "",
+      specialization: "",
+    });
     setShowForm(false);
     toast({ title: "Cycle created", description: newCycle.name });
   };
@@ -102,7 +133,7 @@ export default function CyclesPage() {
           <h2 className="text-base font-semibold text-gray-900 mb-4">
             Create New Cycle
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
             <div>
               <label
                 htmlFor="cycle-name"
@@ -150,6 +181,59 @@ export default function CyclesPage() {
                   setNewCycle((p) => ({ ...p, endDate: e.target.value }))
                 }
               />
+            </div>
+            <div>
+              <label
+                htmlFor="cycle-grade"
+                className="text-xs font-medium text-gray-600 mb-1 block"
+              >
+                Grade
+              </label>
+              <Select
+                value={newCycle.grade}
+                onValueChange={(v) =>
+                  setNewCycle((p) => ({ ...p, grade: v as GradeLevel }))
+                }
+              >
+                <SelectTrigger id="cycle-grade" className="h-10 text-sm">
+                  <SelectValue placeholder="All grades" />
+                </SelectTrigger>
+                <SelectContent>
+                  {GRADES.map((g) => (
+                    <SelectItem key={g} value={g}>
+                      {g}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label
+                htmlFor="cycle-spec"
+                className="text-xs font-medium text-gray-600 mb-1 block"
+              >
+                Specialization
+              </label>
+              <Select
+                value={newCycle.specialization}
+                onValueChange={(v) =>
+                  setNewCycle((p) => ({
+                    ...p,
+                    specialization: v as CompetencyType,
+                  }))
+                }
+              >
+                <SelectTrigger id="cycle-spec" className="h-10 text-sm">
+                  <SelectValue placeholder="All specializations" />
+                </SelectTrigger>
+                <SelectContent>
+                  {SPECIALIZATIONS.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {s}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <div className="flex gap-2">
@@ -201,6 +285,8 @@ export default function CyclesPage() {
                     </div>
                     <p className="text-xs text-gray-400 mt-0.5">
                       {cycle.startDate} → {cycle.endDate}
+                      {cycle.grade && ` · ${cycle.grade}`}
+                      {cycle.specialization && ` · ${cycle.specialization}`}
                     </p>
                     <div className="flex items-center gap-2 mt-2">
                       <div className="w-32 bg-gray-100 rounded-full h-1.5">

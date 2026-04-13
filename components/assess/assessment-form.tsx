@@ -19,14 +19,6 @@ import type {
 const TRIALS: Grade[] = ["A", "B", "C", "D"];
 const PASS_THRESHOLD = 80;
 
-// Derive grade from overall %
-function scoreToGrade(pct: number): Grade {
-  if (pct >= 90) return "A";
-  if (pct >= 75) return "B";
-  if (pct >= 60) return "C";
-  return "D";
-}
-
 // Given current trial letter, return the next one (or same if already D)
 function nextTrial(trial: Grade): Grade {
   const idx = TRIALS.indexOf(trial);
@@ -113,7 +105,9 @@ export function AssessmentForm({
         )
       : 0;
 
-  const derivedGrade = scoreToGrade(overallScore);
+  // Pass = current trial letter, Fail = next trial letter
+  const derivedGrade: Grade =
+    overallScore >= PASS_THRESHOLD ? currentTrial : nextTrial(currentTrial);
   const allTasksEntered = tasks.every((t) =>
     t.subTasks.every((st) => scores[`${t.id}.${st.id}`] !== undefined),
   );

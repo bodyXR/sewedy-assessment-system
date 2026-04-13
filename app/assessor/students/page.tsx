@@ -28,7 +28,7 @@ export default function AssessorStudentsPage() {
       mockStudents.filter(
         (s) =>
           s.competency === roleCtx?.competency &&
-          s.gradeLevel === roleCtx?.class,
+          s.gradeLevel === roleCtx?.grade,
       ),
     [roleCtx],
   );
@@ -67,9 +67,24 @@ export default function AssessorStudentsPage() {
       {/* Header */}
       <div className="bg-gradient-to-r from-red-500 to-red-600 text-white p-8 rounded-2xl mb-6">
         <h1 className="text-2xl font-bold mb-1">Students</h1>
-        <p className="text-red-100 text-sm">
-          {roleCtx?.competency} · {roleCtx?.class} · {roleCtx?.cycleName}
-        </p>
+        <p className="text-red-100 text-sm mb-3">{roleCtx?.cycleName}</p>
+        <div className="flex items-center gap-2 flex-wrap">
+          {roleCtx?.competency && (
+            <span className="bg-white/20 text-white text-xs font-semibold px-3 py-1 rounded-full">
+              {roleCtx.competency}
+            </span>
+          )}
+          {roleCtx?.grade && (
+            <span className="bg-white/20 text-white text-xs font-semibold px-3 py-1 rounded-full">
+              {roleCtx.grade}
+            </span>
+          )}
+          {roleCtx?.classGroup && (
+            <span className="bg-white text-red-600 text-sm font-bold px-3 py-1 rounded-full">
+              Class {roleCtx.classGroup}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Search + Trial */}

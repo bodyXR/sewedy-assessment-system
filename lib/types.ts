@@ -41,13 +41,16 @@ export interface Cycle {
   createdBy: string;
   startDate: string;
   endDate: string;
+  grade?: GradeLevel;
+  specialization?: CompetencyType;
 }
 
 export interface RoleAssignment {
   id: string;
   userId: string;
   cycleId: string;
-  class: GradeLevel;
+  grade: GradeLevel;
+  classGroup: string; // e.g. "J1", "J2", "W1", "S1"
   competency: CompetencyType;
   assignedRole: AssignedRole;
   assignedAt: string;
@@ -104,7 +107,8 @@ export interface StudentAssessment {
 // Role context resolved per cycle
 export interface CurrentRoleContext {
   accountRole: AccountRole;
-  class?: GradeLevel;
+  grade?: GradeLevel;
+  classGroup?: string;
   competency?: CompetencyType;
   assignedRole?: AssignedRole;
   cycleId?: string;
