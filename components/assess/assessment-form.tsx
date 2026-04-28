@@ -240,7 +240,7 @@ export function AssessmentForm({
 
             {/* Subtasks */}
             {isExpanded && (
-              <div className="divide-y divide-gray-100 bg-white">
+              <div className="bg-white px-5 py-3 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
                 {task.subTasks.map((st: SubTask) => {
                   const key = `${task.id}.${st.id}`;
                   const val = scores[key] ?? 0;
@@ -255,45 +255,30 @@ export function AssessmentForm({
                         ? "text-amber-500"
                         : "text-red-500";
                   return (
-                    <div key={st.id} className="px-5 py-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <label className="text-sm text-gray-700 font-medium">
+                    <div
+                      key={st.id}
+                      className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0"
+                    >
+                      <div className="min-w-0 flex-1 mr-3">
+                        <p className="text-sm text-gray-700 truncate">
                           {st.label}
-                        </label>
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="number"
-                            min={0}
-                            max={st.maxPoints}
-                            value={scores[key] ?? ""}
-                            onChange={(e) =>
-                              handleScoreChange(task.id, st.id, e.target.value)
-                            }
-                            disabled={!canEdit}
-                            placeholder="0"
-                            className={`w-16 h-8 text-center border border-gray-200 rounded-lg text-sm font-bold focus:outline-none focus:ring-2 focus:ring-red-300 disabled:bg-gray-50 disabled:text-gray-400 ${stColor}`}
-                          />
-                          <span className="text-xs text-gray-400 w-12">
-                            /{st.maxPoints} pts
-                          </span>
-                        </div>
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          /{st.maxPoints} pts
+                        </p>
                       </div>
                       <input
-                        type="range"
+                        type="number"
                         min={0}
                         max={st.maxPoints}
-                        value={val}
+                        value={scores[key] ?? ""}
                         onChange={(e) =>
                           handleScoreChange(task.id, st.id, e.target.value)
                         }
                         disabled={!canEdit}
-                        className="w-full accent-red-500 disabled:opacity-40"
+                        placeholder="0"
+                        className={`w-16 h-8 text-center border border-gray-200 rounded-lg text-sm font-bold focus:outline-none focus:ring-2 focus:ring-red-300 disabled:bg-gray-50 disabled:text-gray-400 shrink-0 ${stColor}`}
                       />
-                      <div className="flex justify-between text-xs text-gray-300 mt-0.5">
-                        <span>0</span>
-                        <span>{Math.round(st.maxPoints / 2)}</span>
-                        <span>{st.maxPoints}</span>
-                      </div>
                     </div>
                   );
                 })}

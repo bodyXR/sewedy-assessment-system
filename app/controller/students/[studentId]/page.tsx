@@ -5,8 +5,8 @@ import {
   ArrowLeft,
   User,
   BookOpen,
-  Calendar,
   ClipboardList,
+  Calendar,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import {
@@ -16,6 +16,12 @@ import {
   mockUsers,
 } from "@/lib/mock-data";
 
+const statusConfig: Record<string, { label: string; cls: string }> = {
+  draft: { label: "Draft", cls: "bg-gray-100 text-gray-500" },
+  submitted: { label: "Submitted", cls: "bg-amber-100 text-amber-700" },
+  approved: { label: "Approved", cls: "bg-green-100 text-green-700" },
+};
+
 export default function ControllerStudentDetailPage() {
   const { studentId } = useParams<{ studentId: string }>();
   const router = useRouter();
@@ -24,16 +30,9 @@ export default function ControllerStudentDetailPage() {
   if (!student)
     return <div className="p-6 text-gray-500">Student not found.</div>;
 
-  // All results for this student across all cycles
   const results = mockResults
     .filter((r) => r.studentId === studentId)
     .sort((a, b) => (b.submittedAt ?? "").localeCompare(a.submittedAt ?? ""));
-
-  const statusColor: Record<string, string> = {
-    draft: "bg-gray-100 text-gray-600",
-    submitted: "bg-amber-100 text-amber-700",
-    approved: "bg-green-100 text-green-700",
-  };
 
   return (
     <div className="p-6 space-y-6">
@@ -49,7 +48,7 @@ export default function ControllerStudentDetailPage() {
       {/* Header */}
       <div className="bg-gradient-to-r from-red-500 to-red-600 text-white p-6 rounded-2xl">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center text-white font-bold text-lg">
+          <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center text-white font-bold text-xl shrink-0">
             {student.fullName
               .split(" ")
               .map((n) => n[0])
@@ -65,125 +64,121 @@ export default function ControllerStudentDetailPage() {
         </div>
       </div>
 
-      {/* Info cards */}
+      {/* Info strip */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="p-4 flex items-center gap-3">
-          <User className="w-5 h-5 text-gray-400 shrink-0" />
-          <div>
-            <p className="text-xs text-gray-400">Code</p>
-            <p className="text-sm font-semibold text-gray-900">
-              {student.code}
-            </p>
-          </div>
-        </Card>
-        <Card className="p-4 flex items-center gap-3">
-          <BookOpen className="w-5 h-5 text-gray-400 shrink-0" />
-          <div>
-            <p className="text-xs text-gray-400">Class</p>
-            <p className="text-sm font-semibold text-gray-900">
-              {student.gradeLevel}
-            </p>
-          </div>
-        </Card>
-        <Card className="p-4 flex items-center gap-3">
-          <ClipboardList className="w-5 h-5 text-gray-400 shrink-0" />
-          <div>
-            <p className="text-xs text-gray-400">Competency</p>
-            <p className="text-sm font-semibold text-gray-900">
-              {student.competency}
-            </p>
-          </div>
-        </Card>
-        <Card className="p-4 flex items-center gap-3">
-          <Calendar className="w-5 h-5 text-gray-400 shrink-0" />
-          <div>
-            <p className="text-xs text-gray-400">Total Results</p>
-            <p className="text-sm font-semibold text-gray-900">
-              {results.length}
-            </p>
-          </div>
-        </Card>
+        {[
+          { icon: User, label: "Code", value: student.code },
+          { icon: BookOpen, label: "Grade", value: student.gradeLevel },
+          {
+            icon: ClipboardList,
+            label: "Competency",
+            value: student.competency,
+          },
+          { icon: Calendar, label: "Assessments", value: results.length },
+        ].map(({ icon: Icon, label, value }) => (
+          <Card key={label} className="p-4 flex items-center gap-3">
+            <div className="w-9 h-9 bg-red-50 rounded-lg flex items-center justify-center shrink-0">
+              <Icon className="w-4 h-4 text-red-500" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-400">{label}</p>
+              <p className="text-sm font-semibold text-gray-900">{value}</p>
+            </div>
+          </Card>
+        ))}
       </div>
 
       {/* Assessment History */}
-      <Card className="overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100">
-          <h2 className="font-semibold text-gray-900">Assessment History</h2>
-        </div>
+      <div>
+        <h2 className="text-base font-semibold text-gray-900 mb-3">
+          Assessment History
+        </h2>
         {results.length === 0 ? (
-          <div className="p-12 text-center text-gray-400">
+          <Card className="p-12 text-center text-gray-400">
             No assessment records yet.
-          </div>
+          </Card>
         ) : (
-          <div className="divide-y divide-gray-50">
+          <div className="space-y-4">
             {results.map((result) => {
               const cycle = mockCycles.find((c) => c.id === result.cycleId);
               const assessor = mockUsers.find(
                 (u) => u.id === result.assessorId,
               );
-              const scores = Object.values(result.scores);
+              const scoreValues = Object.values(result.scores);
               const avgScore =
-                scores.length > 0
+                scoreValues.length > 0
                   ? Math.round(
-                      scores.reduce((a, b) => a + b, 0) / scores.length,
+                      scoreValues.reduce((a, b) => a + b, 0) /
+                        scoreValues.length,
                     )
                   : null;
+              const st = statusConfig[result.status] ?? statusConfig.draft;
 
               return (
-                <div key={result.id} className="px-6 py-5">
-                  {/* Row header */}
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <p className="font-medium text-gray-900 text-sm">
-                        {cycle?.name ?? result.cycleId}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-0.5">
-                        Assessed by {assessor?.fullName ?? "—"}
-                        {result.submittedAt &&
-                          ` · ${new Date(result.submittedAt).toLocaleDateString()}`}
-                      </p>
+                <Card key={result.id} className="overflow-hidden">
+                  {/* Card header */}
+                  <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 bg-red-50 rounded-lg flex items-center justify-center shrink-0">
+                        <Calendar className="w-4 h-4 text-red-500" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-900 text-sm">
+                          {cycle?.name ?? result.cycleId}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          {assessor?.fullName ?? "—"}
+                          {result.submittedAt &&
+                            ` · ${new Date(result.submittedAt).toLocaleDateString()}`}
+                        </p>
+                      </div>
                     </div>
                     <div className="flex items-center gap-3">
                       {avgScore !== null && (
-                        <span
-                          className={`text-lg font-bold ${avgScore >= 80 ? "text-green-600" : avgScore >= 60 ? "text-amber-500" : "text-red-500"}`}
-                        >
-                          {avgScore}%
-                        </span>
+                        <div className="text-right">
+                          <p
+                            className={`text-2xl font-bold leading-none ${avgScore >= 80 ? "text-green-600" : avgScore >= 60 ? "text-amber-500" : "text-red-500"}`}
+                          >
+                            {avgScore}
+                          </p>
+                          <p className="text-xs text-gray-400 mt-0.5">
+                            avg score
+                          </p>
+                        </div>
                       )}
                       <span
-                        className={`text-xs font-medium px-2.5 py-1 rounded-full capitalize ${statusColor[result.status] ?? "bg-gray-100 text-gray-500"}`}
+                        className={`text-xs font-semibold px-2.5 py-1 rounded-full capitalize ${st.cls}`}
                       >
-                        {result.status}
+                        {st.label}
                       </span>
                     </div>
                   </div>
 
                   {/* Score breakdown */}
                   {Object.keys(result.scores).length > 0 && (
-                    <div className="space-y-2 mt-3">
+                    <div className="px-5 py-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
                       {Object.entries(result.scores).map(
                         ([criterion, score]) => {
                           const s = Number(score);
+                          const passed = s >= 80;
                           return (
                             <div
                               key={criterion}
-                              className="flex items-center gap-3"
+                              className={`rounded-xl p-3 border ${passed ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"}`}
                             >
-                              <span className="text-xs text-gray-500 w-44 shrink-0">
+                              <p className="text-xs text-gray-500 truncate mb-1">
                                 {criterion}
-                              </span>
-                              <div className="flex-1 bg-gray-100 rounded-full h-1.5">
-                                <div
-                                  className={`h-1.5 rounded-full ${s >= 80 ? "bg-green-500" : s >= 60 ? "bg-amber-400" : "bg-red-400"}`}
-                                  style={{ width: `${s}%` }}
-                                />
-                              </div>
-                              <span
-                                className={`text-xs font-semibold w-8 text-right ${s >= 80 ? "text-green-600" : s >= 60 ? "text-amber-500" : "text-red-500"}`}
+                              </p>
+                              <p
+                                className={`text-2xl font-bold leading-none ${passed ? "text-green-600" : "text-red-500"}`}
                               >
                                 {s}
-                              </span>
+                              </p>
+                              <p
+                                className={`text-xs font-medium mt-1 ${passed ? "text-green-500" : "text-red-400"}`}
+                              >
+                                {passed ? "Pass" : "Fail"}
+                              </p>
                             </div>
                           );
                         },
@@ -193,16 +188,23 @@ export default function ControllerStudentDetailPage() {
 
                   {/* Notes */}
                   {result.notes && (
-                    <p className="text-xs text-gray-500 mt-3 italic border-l-2 border-gray-200 pl-3">
-                      {result.notes}
-                    </p>
+                    <div className="px-5 pb-4">
+                      <div className="bg-gray-50 rounded-lg px-4 py-3 border-l-4 border-red-200">
+                        <p className="text-xs font-semibold text-gray-500 mb-1">
+                          Assessor Notes
+                        </p>
+                        <p className="text-sm text-gray-600 leading-relaxed">
+                          {result.notes}
+                        </p>
+                      </div>
+                    </div>
                   )}
-                </div>
+                </Card>
               );
             })}
           </div>
         )}
-      </Card>
+      </div>
     </div>
   );
 }
