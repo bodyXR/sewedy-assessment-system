@@ -45,7 +45,7 @@ export function StudentsTable({
         <SortableHeader column={column} title="Grade Level" />
       ),
       cell: ({ row }) => (
-        <span className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-primary/10 text-primary">
+        <span className="inline-block px-3 py-1 rounded-none text-xs font-bold uppercase tracking-wider bg-primary/10 text-primary border border-primary/20">
           {row.getValue("gradeLevel")}
         </span>
       ),

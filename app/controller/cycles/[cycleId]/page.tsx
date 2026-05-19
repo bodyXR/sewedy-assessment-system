@@ -70,26 +70,28 @@ export default function CycleDetailPage() {
   });
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="min-h-screen bg-gray-50 p-6 space-y-6">
       <button
         onClick={() => router.push("/controller/cycles")}
-        className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 transition-colors"
+        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors font-medium"
       >
         <ArrowLeft className="w-4 h-4" />
         Back to Cycles
       </button>
 
       {/* Header */}
-      <div className="bg-gradient-to-r from-red-500 to-red-600 text-white p-6 rounded-2xl">
+      <div className="bg-primary text-primary-foreground p-8 rounded-[3px] border border-border/50 shadow-sm">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold">{cycle.name}</h1>
-            <p className="text-red-100 text-sm mt-0.5">
+            <h1 className="text-2xl font-bold tracking-tight uppercase">
+              {cycle.name}
+            </h1>
+            <p className="text-primary-foreground/80 text-sm font-medium tracking-wide mt-1">
               {cycle.startDate} → {cycle.endDate}
             </p>
           </div>
           <span
-            className={`text-xs font-semibold px-3 py-1 rounded-full capitalize ${cycleStatusColor[cycle.status]}`}
+            className={`text-[10px] font-bold px-3 py-1.5 rounded-[3px] border uppercase tracking-widest ${cycleStatusColor[cycle.status]}`}
           >
             {cycle.status}
           </span>
@@ -99,63 +101,72 @@ export default function CycleDetailPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: "Total Students", value: total, color: "text-gray-900" },
-          { label: "Assessed", value: assessed, color: "text-red-500" },
-          { label: "Approved", value: approved, color: "text-green-600" },
+          { label: "Total Students", value: total, color: "text-foreground" },
+          { label: "Assessed", value: assessed, color: "text-primary" },
+          { label: "Approved", value: approved, color: "text-success" },
           {
             label: "Completion",
             value: `${completion}%`,
-            color: "text-blue-600",
+            color: "text-primary",
           },
         ].map((s) => (
-          <Card key={s.label} className="p-4 text-center">
-            <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
-            <p className="text-xs text-gray-400 mt-1">{s.label}</p>
+          <Card
+            key={s.label}
+            className="p-5 rounded-[3px] border-2 border-border shadow-sm text-center group hover:border-primary/50 transition-colors"
+          >
+            <p className={`text-3xl font-bold tracking-tight ${s.color}`}>
+              {s.value}
+            </p>
+            <p className="text-[10px] font-bold text-muted-foreground mt-2 uppercase tracking-widest">
+              {s.label}
+            </p>
           </Card>
         ))}
       </div>
 
       {/* Overall progress */}
-      <Card className="p-5">
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-sm font-semibold text-gray-700">
+      <Card className="p-6 rounded-[3px] border-2 border-border shadow-sm">
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-sm font-bold text-foreground uppercase tracking-widest">
             Overall Progress
           </p>
-          <span className="text-sm font-bold text-red-500">{completion}%</span>
+          <span className="text-2xl font-bold text-primary tracking-tight">
+            {completion}%
+          </span>
         </div>
-        <div className="w-full bg-gray-100 rounded-full h-3">
+        <div className="w-full bg-secondary/50 rounded-full h-3 border border-border">
           <div
-            className="bg-gradient-to-r from-red-400 to-red-500 h-3 rounded-full transition-all duration-500"
+            className="bg-primary h-full rounded-full transition-all duration-500"
             style={{ width: `${completion}%` }}
           />
         </div>
-        <p className="text-xs text-gray-400 mt-1.5">
+        <p className="text-xs font-bold text-muted-foreground mt-2 uppercase tracking-wider">
           {assessed} of {total} students assessed
         </p>
       </Card>
 
       {/* By competency */}
-      <Card className="p-5">
-        <h2 className="text-sm font-semibold text-gray-700 mb-4">
+      <Card className="p-6 rounded-[3px] border-2 border-border shadow-sm">
+        <h2 className="text-sm font-bold text-foreground mb-4 uppercase tracking-widest">
           Progress by Competency
         </h2>
-        <div className="space-y-3">
+        <div className="space-y-4">
           {byCompetency.map(({ comp, total: t, assessed: a, approved: ap }) => (
             <div key={comp} className="flex items-center gap-4">
-              <span className="text-sm text-gray-700 w-28 shrink-0 font-medium">
+              <span className="text-sm font-bold text-foreground w-28 shrink-0 uppercase tracking-wider">
                 {comp}
               </span>
-              <div className="flex-1 bg-gray-100 rounded-full h-2">
+              <div className="flex-1 bg-secondary/50 rounded-full h-2.5 border border-border">
                 <div
-                  className="bg-red-400 h-2 rounded-full transition-all"
+                  className="bg-primary h-full rounded-full transition-all"
                   style={{ width: t > 0 ? `${(a / t) * 100}%` : "0%" }}
                 />
               </div>
-              <div className="flex gap-3 text-xs text-gray-400 w-32 shrink-0 text-right">
+              <div className="flex gap-3 text-xs font-bold text-muted-foreground w-40 shrink-0 text-right uppercase tracking-wider">
                 <span>
                   {a}/{t} assessed
                 </span>
-                <span className="text-green-600">{ap} approved</span>
+                <span className="text-success">{ap} approved</span>
               </div>
             </div>
           ))}
@@ -163,52 +174,59 @@ export default function CycleDetailPage() {
       </Card>
 
       {/* Student list */}
-      <Card className="overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100">
-          <h2 className="font-semibold text-gray-900">Students ({total})</h2>
+      <Card className="overflow-hidden rounded-[3px] border-2 border-border shadow-sm">
+        <div className="px-6 py-5 border-b-2 border-border bg-card">
+          <h2 className="font-bold text-foreground uppercase tracking-widest text-sm">
+            Students ({total})
+          </h2>
         </div>
-        <div className="divide-y divide-gray-50">
-          {studentsWithResults.map(({ student, result, assessor, avg }) => (
-            <div
-              key={student.id}
-              className="flex items-center justify-between px-6 py-4 hover:bg-gray-50/50 transition-colors"
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-red-50 rounded-full flex items-center justify-center text-red-600 font-semibold text-sm shrink-0">
-                  {student.fullName
-                    .split(" ")
-                    .map((n) => n[0])
-                    .join("")
-                    .slice(0, 2)}
+        <div className="overflow-x-auto scrollbar-thin">
+          <div className="divide-y divide-gray-50 min-w-[640px]">
+            {studentsWithResults.map(({ student, result, assessor, avg }) => (
+              <div
+                key={student.id}
+                className="flex items-center justify-between px-6 py-4 hover:bg-secondary/30 transition-colors group"
+              >
+                <div className="flex items-center gap-5">
+                  <div className="w-12 h-12 bg-primary/10 rounded-[3px] border-2 border-primary/20 flex items-center justify-center text-primary font-bold text-sm tracking-wider uppercase shrink-0">
+                    {student.fullName
+                      .split(" ")
+                      .map((n) => n[0])
+                      .join("")
+                      .slice(0, 2)}
+                  </div>
+                  <div>
+                    <p className="font-bold text-foreground text-lg group-hover:text-primary transition-colors">
+                      {student.fullName}
+                    </p>
+                    <p className="text-xs font-bold text-muted-foreground tracking-wider uppercase mt-1">
+                      {student.code} <span className="mx-1 text-border">|</span>{" "}
+                      {student.gradeLevel}{" "}
+                      <span className="mx-1 text-border">|</span>{" "}
+                      {student.competency}
+                      {assessor && ` | ${assessor.fullName}`}
+                      {result?.submittedAt &&
+                        ` | ${new Date(result.submittedAt).toLocaleDateString()}`}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-medium text-gray-900">
-                    {student.fullName}
-                  </p>
-                  <p className="text-xs text-gray-400">
-                    {student.code} · {student.gradeLevel} · {student.competency}
-                    {assessor && ` · ${assessor.fullName}`}
-                    {result?.submittedAt &&
-                      ` · ${new Date(result.submittedAt).toLocaleDateString()}`}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                {avg !== null && (
+                <div className="flex items-center gap-4">
+                  {avg !== null && (
+                    <span
+                      className={`text-xl font-bold tracking-tight ${avg >= 70 ? "text-success" : avg >= 50 ? "text-warning" : "text-destructive"}`}
+                    >
+                      {avg}%
+                    </span>
+                  )}
                   <span
-                    className={`text-sm font-semibold ${avg >= 80 ? "text-green-600" : avg >= 60 ? "text-amber-500" : "text-red-500"}`}
+                    className={`text-[10px] font-bold px-2.5 py-1.5 rounded-[3px] border uppercase tracking-widest ${statusColor[result?.status ?? "draft"]}`}
                   >
-                    {avg}%
+                    {result?.status ?? "not started"}
                   </span>
-                )}
-                <span
-                  className={`text-xs font-medium px-2.5 py-1 rounded-full capitalize ${statusColor[result?.status ?? "draft"]}`}
-                >
-                  {result?.status ?? "not started"}
-                </span>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </Card>
     </div>

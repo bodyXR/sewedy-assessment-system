@@ -13,7 +13,7 @@ export function Sidebar() {
 
   const handleLogout = () => {
     logout();
-    router.push("/login");
+    router.push("/");
   };
 
   const navItems = [
@@ -40,9 +40,9 @@ export function Sidebar() {
   ];
 
   return (
-    <aside className="w-80 bg-white flex flex-col h-screen">
+    <aside className="w-80 bg-[#2d1b1b] flex flex-col h-screen border-r border-red-950/30">
       {/* Logo Area */}
-      <div className="p-6">
+      <div className="p-6 border-b border-red-950/30">
         <div className="flex items-center gap-3">
           <Image
             src="/logo.png"
@@ -65,8 +65,8 @@ export function Sidebar() {
               className={cn(
                 "w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all duration-200 font-medium text-base",
                 isActive
-                  ? "bg-gradient-to-r from-[#E40000] to-[#ff002f] text-white shadow-lg"
-                  : "text-gray-400 hover:text-gray-600 hover:bg-gray-50",
+                  ? "bg-gradient-to-r from-[#E40000] to-[#ff002f] text-white shadow-lg shadow-red-900/30"
+                  : "text-red-200/60 hover:text-red-100 hover:bg-red-950/40",
               )}
               onClick={() => router.push(item.href)}
             >
@@ -78,9 +78,9 @@ export function Sidebar() {
       </nav>
 
       {/* Logout Button */}
-      <div className="p-6">
+      <div className="p-6 border-t border-red-950/30">
         <button
-          className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-red-500 hover:bg-red-50 transition-all duration-200 font-medium text-base"
+          className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-red-300 hover:text-red-200 hover:bg-red-950/50 transition-all duration-200 font-medium text-base"
           onClick={handleLogout}
         >
           <LogOut className="w-6 h-6" />

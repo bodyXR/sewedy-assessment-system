@@ -111,17 +111,19 @@ export default function CyclesPage() {
   };
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="bg-gradient-to-r from-red-500 to-red-600 text-white p-8 rounded-2xl flex items-center justify-between">
+    <div className="min-h-screen bg-gray-50 p-6 space-y-6">
+      <div className="bg-primary text-primary-foreground p-8 rounded-[3px] border border-border/50 shadow-sm flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold mb-1">Assessment Cycles</h1>
-          <p className="text-red-100 text-sm">
-            Create, open, close, and reset cycles
+          <h1 className="text-3xl font-bold tracking-tight mb-2 uppercase">
+            Assessment Cycles
+          </h1>
+          <p className="text-primary-foreground/80 text-sm font-medium tracking-wide">
+            CREATE, OPEN, CLOSE, AND RESET CYCLES
           </p>
         </div>
         <Button
           onClick={() => setShowForm((v) => !v)}
-          className="bg-white text-red-600 hover:bg-red-50 font-semibold"
+          className="bg-background text-primary hover:bg-background/90 font-bold border border-border"
         >
           <Plus className="w-4 h-4 mr-2" />
           New Cycle
@@ -129,8 +131,8 @@ export default function CyclesPage() {
       </div>
 
       {showForm && (
-        <Card className="p-6 border-red-100">
-          <h2 className="text-base font-semibold text-gray-900 mb-4">
+        <Card className="p-6 rounded-[3px] border-2 border-primary/20 shadow-sm">
+          <h2 className="text-sm font-bold text-foreground mb-4 uppercase tracking-widest">
             Create New Cycle
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
@@ -239,11 +241,15 @@ export default function CyclesPage() {
           <div className="flex gap-2">
             <Button
               onClick={handleCreate}
-              className="bg-red-500 hover:bg-red-600"
+              className="bg-primary hover:bg-primary/90 font-bold"
             >
               Create
             </Button>
-            <Button variant="outline" onClick={() => setShowForm(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setShowForm(false)}
+              className="font-bold"
+            >
               Cancel
             </Button>
           </div>
@@ -265,28 +271,28 @@ export default function CyclesPage() {
             <Card
               key={cycle.id}
               onClick={() => router.push(`/controller/cycles/${cycle.id}`)}
-              className="p-5 cursor-pointer hover:shadow-md transition-shadow"
+              className="p-5 cursor-pointer hover:shadow-md transition-all rounded-[3px] border-2 border-border hover:border-primary/50 group"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4 flex-1 min-w-0">
-                  <div className="w-10 h-10 bg-red-50 rounded-xl flex items-center justify-center shrink-0">
-                    <Calendar className="w-5 h-5 text-red-500" />
+                  <div className="w-12 h-12 bg-primary/10 rounded-[3px] border-2 border-primary/20 flex items-center justify-center shrink-0">
+                    <Calendar className="w-5 h-5 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="font-semibold text-gray-900">
+                      <h3 className="font-bold text-foreground text-lg group-hover:text-primary transition-colors">
                         {cycle.name}
                       </h3>
                       <span
-                        className={`text-xs font-medium px-2 py-0.5 rounded-full ${cfg.color}`}
+                        className={`text-[10px] font-bold px-2.5 py-1 rounded-[3px] border uppercase tracking-widest ${cfg.color}`}
                       >
                         {cfg.label}
                       </span>
                     </div>
-                    <p className="text-xs text-gray-400 mt-0.5">
+                    <p className="text-xs font-bold text-muted-foreground tracking-wider uppercase mt-1">
                       {cycle.startDate} → {cycle.endDate}
-                      {cycle.grade && ` · ${cycle.grade}`}
-                      {cycle.specialization && ` · ${cycle.specialization}`}
+                      {cycle.grade && ` | ${cycle.grade}`}
+                      {cycle.specialization && ` | ${cycle.specialization}`}
                     </p>
                     <div className="flex items-center gap-2 mt-2">
                       <div className="w-32 bg-gray-100 rounded-full h-1.5">

@@ -14,8 +14,8 @@ export const mockUsers: User[] = [
   {
     id: "u1",
     username: "controller",
-    fullName: "Hussien Sharaf",
-    email: "hussien@eng.edu",
+    fullName: "Wael Darwish",
+    email: "wael@eng.edu",
     accountRole: "controller",
   },
   {

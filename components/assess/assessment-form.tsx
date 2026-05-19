@@ -151,32 +151,36 @@ export function AssessmentForm({
     <div className="space-y-5">
       {/* ── Locked notice ─────────────────────────────────────── */}
       {isLocked && (
-        <div className="flex items-center gap-3 p-4 rounded-xl border border-amber-200 bg-amber-50">
-          <Lock className="w-4 h-4 text-amber-600 shrink-0" />
-          <p className="text-sm text-amber-700">
+        <div className="flex items-center gap-3 p-4 rounded-[3px] border-2 border-warning bg-warning/10">
+          <Lock className="w-4 h-4 text-warning shrink-0" />
+          <p className="text-sm font-bold text-foreground tracking-wide uppercase">
             This result is submitted and locked.
           </p>
         </div>
       )}
 
       {/* ── Trial banner ──────────────────────────────────────── */}
-      <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 flex items-center justify-between">
+      <div className="bg-card border-2 border-border rounded-[3px] px-5 py-4 flex items-center justify-between shadow-sm">
         <div>
-          <p className="text-sm font-semibold text-blue-900">
+          <p className="text-sm font-bold text-foreground uppercase tracking-widest">
             Trial {currentTrial}
           </p>
-          <p className="text-xs text-blue-600 mt-0.5">
+          <p className="text-xs text-muted-foreground mt-1 font-medium">
             Pass threshold: {PASS_THRESHOLD} pts per task
           </p>
         </div>
         <div className="text-right">
           <p
-            className={`text-2xl font-bold ${overallScore >= PASS_THRESHOLD ? "text-green-600" : "text-red-500"}`}
+            className={`text-3xl font-bold tracking-tight ${overallScore >= PASS_THRESHOLD ? "text-success" : "text-destructive"}`}
           >
             {overallScore}
-            <span className="text-sm font-normal text-gray-400">/100</span>
+            <span className="text-sm font-bold text-muted-foreground ml-1">
+              /100
+            </span>
           </p>
-          <p className="text-xs text-gray-500">Overall avg</p>
+          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">
+            Overall avg
+          </p>
         </div>
       </div>
 
@@ -187,7 +191,7 @@ export function AssessmentForm({
         return (
           <div
             key={task.id}
-            className="border border-gray-200 rounded-xl overflow-hidden"
+            className="border-2 border-border rounded-[3px] bg-card overflow-hidden shadow-sm transition-all focus-within:border-primary/50"
           >
             {/* Task header */}
             <button
@@ -195,52 +199,52 @@ export function AssessmentForm({
               onClick={() =>
                 setExpanded((p) => ({ ...p, [task.id]: !p[task.id] }))
               }
-              className="w-full flex items-center justify-between px-5 py-3.5 bg-white hover:bg-gray-50 transition-colors text-left"
+              className="w-full flex items-center justify-between px-5 py-4 bg-transparent hover:bg-secondary/50 transition-colors text-left"
             >
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-semibold text-gray-900">
+              <div className="flex items-center gap-4">
+                <span className="text-sm font-bold text-foreground uppercase tracking-wide">
                   {task.label}
                 </span>
                 <span
-                  className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                  className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-[3px] border ${
                     passed
-                      ? "bg-green-100 text-green-700"
+                      ? "bg-success/10 text-success border-success/20"
                       : total > 0
-                        ? "bg-red-100 text-red-600"
-                        : "bg-gray-100 text-gray-500"
+                        ? "bg-destructive/10 text-destructive border-destructive/20"
+                        : "bg-muted text-muted-foreground border-border"
                   }`}
                 >
                   {passed ? "Pass" : total > 0 ? "Fail" : "—"}
                 </span>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-4">
                 <span
-                  className={`text-lg font-bold ${passed ? "text-green-600" : total > 0 ? "text-red-500" : "text-gray-400"}`}
+                  className={`text-xl font-bold tracking-tight ${passed ? "text-success" : total > 0 ? "text-destructive" : "text-muted-foreground"}`}
                 >
                   {total}
-                  <span className="text-xs font-normal text-gray-400">
+                  <span className="text-xs font-bold text-muted-foreground ml-1">
                     /100
                   </span>
                 </span>
                 {isExpanded ? (
-                  <ChevronUp className="w-4 h-4 text-gray-400" />
+                  <ChevronUp className="w-5 h-5 text-muted-foreground" />
                 ) : (
-                  <ChevronDown className="w-4 h-4 text-gray-400" />
+                  <ChevronDown className="w-5 h-5 text-muted-foreground" />
                 )}
               </div>
             </button>
 
             {/* Task progress bar */}
-            <div className="h-1.5 bg-gray-100">
+            <div className="h-1 bg-border/50">
               <div
-                className={`h-1.5 transition-all duration-300 ${passed ? "bg-green-500" : "bg-red-400"}`}
+                className={`h-1 transition-all duration-300 ${passed ? "bg-success" : "bg-destructive"}`}
                 style={{ width: `${Math.min(total, 100)}%` }}
               />
             </div>
 
             {/* Subtasks */}
             {isExpanded && (
-              <div className="bg-white px-5 py-3 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
+              <div className="bg-background px-5 py-4 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 border-t-2 border-border/50">
                 {task.subTasks.map((st: SubTask) => {
                   const key = `${task.id}.${st.id}`;
                   const val = scores[key] ?? 0;
@@ -250,21 +254,21 @@ export function AssessmentForm({
                       : 0;
                   const stColor =
                     pct >= 80
-                      ? "text-green-600"
+                      ? "text-success"
                       : pct >= 50
-                        ? "text-amber-500"
-                        : "text-red-500";
+                        ? "text-warning"
+                        : "text-destructive";
                   return (
                     <div
                       key={st.id}
-                      className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0"
+                      className="flex items-center justify-between py-2 border-b border-border/30 last:border-0 group"
                     >
-                      <div className="min-w-0 flex-1 mr-3">
-                        <p className="text-sm text-gray-700 truncate">
+                      <div className="min-w-0 flex-1 mr-4">
+                        <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
                           {st.label}
                         </p>
-                        <p className="text-xs text-gray-400">
-                          /{st.maxPoints} pts
+                        <p className="text-xs font-bold text-muted-foreground mt-0.5 tracking-wider uppercase">
+                          Max {st.maxPoints} pts
                         </p>
                       </div>
                       <input
@@ -277,7 +281,7 @@ export function AssessmentForm({
                         }
                         disabled={!canEdit}
                         placeholder="0"
-                        className={`w-16 h-8 text-center border border-gray-200 rounded-lg text-sm font-bold focus:outline-none focus:ring-2 focus:ring-red-300 disabled:bg-gray-50 disabled:text-gray-400 shrink-0 ${stColor}`}
+                        className={`w-20 h-10 text-center border-2 border-border rounded-[3px] text-base font-bold bg-background focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all disabled:bg-muted disabled:text-muted-foreground shrink-0 ${stColor}`}
                       />
                     </div>
                   );
@@ -290,64 +294,66 @@ export function AssessmentForm({
 
       {/* ── Overall result summary ────────────────────────────── */}
       {tasks.length > 0 && (
-        <div className="rounded-xl border border-gray-200 bg-gray-50 px-5 py-4">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+        <div className="rounded-[3px] border-2 border-border bg-card px-6 py-5 shadow-sm">
+          <div className="flex items-center justify-between mb-5">
+            <h3 className="text-sm font-bold text-foreground uppercase tracking-widest">
               Result Summary
             </h3>
             <div
-              className={`text-3xl font-bold ${overallScore >= PASS_THRESHOLD ? "text-green-600" : "text-red-500"}`}
+              className={`text-4xl font-bold tracking-tight ${overallScore >= PASS_THRESHOLD ? "text-success" : "text-destructive"}`}
             >
               {overallScore}%
             </div>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-5">
             {taskResults.map(({ task, total, passed }) => (
               <div
                 key={task.id}
-                className={`rounded-lg p-3 text-center border ${passed ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"}`}
+                className={`rounded-[3px] p-4 text-center border-2 ${passed ? "bg-success/5 border-success/30" : "bg-destructive/5 border-destructive/30"}`}
               >
-                <p className="text-xs text-gray-500 truncate mb-1">
+                <p className="text-[10px] font-bold text-foreground uppercase tracking-wider truncate mb-2">
                   {task.label.split("–")[0].trim()}
                 </p>
                 <p
-                  className={`text-xl font-bold ${passed ? "text-green-600" : "text-red-500"}`}
+                  className={`text-2xl font-bold tracking-tight ${passed ? "text-success" : "text-destructive"}`}
                 >
                   {total}
                 </p>
                 <p
-                  className={`text-xs font-medium mt-0.5 ${passed ? "text-green-600" : "text-red-500"}`}
+                  className={`text-[10px] font-bold uppercase tracking-widest mt-1 ${passed ? "text-success" : "text-destructive"}`}
                 >
                   {passed ? "Pass" : "Fail"}
                 </p>
               </div>
             ))}
           </div>
-          <div className="flex items-center justify-between text-sm pt-3 border-t border-gray-200">
+          <div className="flex items-center justify-between text-sm pt-4 border-t-2 border-border/50">
             <div>
-              <span className="text-gray-500">Derived grade</span>
+              <span className="text-muted-foreground font-bold uppercase tracking-wider text-xs">
+                Derived Grade
+              </span>
               {overallScore < PASS_THRESHOLD && currentTrial !== "D" && (
-                <p className="text-xs text-amber-600 mt-0.5">
+                <p className="text-[10px] font-bold text-warning uppercase tracking-widest mt-1">
                   Fails → moves to Trial {nextTrial(currentTrial)}
                 </p>
               )}
             </div>
             {overallScore >= PASS_THRESHOLD ? (
               <span
-                className={`text-2xl font-bold ${
+                className={`text-3xl font-bold tracking-tight ${
                   currentTrial === "A"
-                    ? "text-green-600"
+                    ? "text-success"
                     : currentTrial === "B"
-                      ? "text-blue-600"
+                      ? "text-blue-500"
                       : currentTrial === "C"
-                        ? "text-amber-500"
-                        : "text-red-500"
+                        ? "text-warning"
+                        : "text-destructive"
                 }`}
               >
                 {currentTrial}
               </span>
             ) : (
-              <span className="text-lg font-bold text-amber-500">
+              <span className="text-2xl font-bold tracking-tight text-warning">
                 Trial {nextTrial(currentTrial)}
               </span>
             )}
@@ -377,7 +383,7 @@ export function AssessmentForm({
       {/* ── Actions ───────────────────────────────────────────── */}
       {canEdit && (
         <div
-          className={`flex gap-3 ${mode === "sheet" ? "pt-2 border-t border-gray-100" : ""}`}
+          className={`flex gap-4 mt-6 ${mode === "sheet" ? "pt-4 border-t-2 border-border" : ""}`}
         >
           {mode === "page" ? (
             <>
@@ -385,33 +391,37 @@ export function AssessmentForm({
                 variant="outline"
                 onClick={handleSaveDraft}
                 disabled={isSaving}
-                className="gap-2"
+                className="flex-1 py-6 text-sm"
               >
-                <Save className="w-4 h-4" />
+                <Save className="w-4 h-4 mr-2" />
                 Save Draft
               </Button>
               <Button
                 onClick={handleSubmit}
                 disabled={isSaving}
-                className="gap-2 bg-red-500 hover:bg-red-600"
+                className="flex-[2] py-6 text-sm"
               >
-                <Send className="w-4 h-4" />
+                <Send className="w-4 h-4 mr-2" />
                 Submit Results
               </Button>
             </>
           ) : (
             <>
               {onCancel && (
-                <Button variant="outline" onClick={onCancel} className="flex-1">
+                <Button
+                  variant="outline"
+                  onClick={onCancel}
+                  className="flex-1 py-6"
+                >
                   Cancel
                 </Button>
               )}
               <Button
                 onClick={handleSubmit}
                 disabled={isSaving}
-                className="flex-1 bg-green-600 hover:bg-green-700 gap-2"
+                className="flex-[2] py-6"
               >
-                <Zap className="w-4 h-4" />
+                <Zap className="w-4 h-4 mr-2" />
                 Save Assessment
               </Button>
             </>

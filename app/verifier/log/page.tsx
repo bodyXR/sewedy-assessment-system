@@ -20,18 +20,20 @@ export default function VerifierLogPage() {
   };
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="bg-gradient-to-r from-red-500 to-red-600 text-white p-8 rounded-2xl">
-        <h1 className="text-2xl font-bold mb-1">Activity Log</h1>
-        <p className="text-red-100 text-sm">
-          All assessment activity across this cycle
+    <div className="min-h-screen bg-gray-50 p-6 space-y-6">
+      <div className="bg-primary text-primary-foreground p-8 rounded-[3px] border border-border/50 shadow-sm">
+        <h1 className="text-3xl font-bold tracking-tight mb-2 uppercase">
+          Activity Log
+        </h1>
+        <p className="text-primary-foreground/80 text-sm font-medium tracking-wide">
+          ALL ASSESSMENT ACTIVITY ACROSS THIS CYCLE
         </p>
       </div>
 
-      <Card className="overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100">
-          <h2 className="font-semibold text-gray-900">
-            {activityLog.length} entries
+      <Card className="overflow-hidden rounded-[3px] border-2 border-border shadow-sm">
+        <div className="px-6 py-5 border-b-2 border-border bg-card">
+          <h2 className="font-bold text-foreground uppercase tracking-widest text-sm">
+            {activityLog.length} Entries
           </h2>
         </div>
         {activityLog.length === 0 ? (
@@ -40,42 +42,49 @@ export default function VerifierLogPage() {
             <p>No activity yet.</p>
           </div>
         ) : (
-          <div className="divide-y divide-gray-50">
-            {activityLog.map((result) => {
-              const student = mockStudents.find(
-                (s) => s.id === result.studentId,
-              );
-              const assessor = mockUsers.find(
-                (u) => u.id === result.assessorId,
-              );
+          <div className="overflow-x-auto scrollbar-thin">
+            <div className="divide-y divide-gray-50 min-w-[768px]">
+              {activityLog.map((result) => {
+                const student = mockStudents.find(
+                  (s) => s.id === result.studentId,
+                );
+                const assessor = mockUsers.find(
+                  (u) => u.id === result.assessorId,
+                );
 
-              return (
-                <div
-                  key={result.id}
-                  className="flex items-center gap-4 px-6 py-4"
-                >
-                  <div className="w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center shrink-0">
-                    <Eye className="w-4 h-4 text-gray-500" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-gray-900 text-sm">
-                      {student?.fullName}
-                    </p>
-                    <p className="text-xs text-gray-400">
-                      {student?.code} · {result.competency} ·{" "}
-                      {student?.gradeLevel} · by {assessor?.fullName}
-                      {result.submittedAt &&
-                        ` · ${new Date(result.submittedAt).toLocaleDateString()}`}
-                    </p>
-                  </div>
-                  <span
-                    className={`text-xs font-semibold px-2.5 py-1 rounded-full capitalize ${statusColor[result.status] ?? "bg-gray-100 text-gray-600"}`}
+                return (
+                  <div
+                    key={result.id}
+                    className="flex items-center gap-5 px-6 py-4 hover:bg-secondary/30 transition-colors group"
                   >
-                    {result.status}
-                  </span>
-                </div>
-              );
-            })}
+                    <div className="w-12 h-12 bg-primary/10 rounded-[3px] border-2 border-primary/20 flex items-center justify-center shrink-0">
+                      <Eye className="w-5 h-5 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-foreground text-lg group-hover:text-primary transition-colors">
+                        {student?.fullName}
+                      </p>
+                      <p className="text-xs font-bold text-muted-foreground tracking-wider uppercase mt-1">
+                        {student?.code}{" "}
+                        <span className="mx-1 text-border">|</span>{" "}
+                        {result.competency}{" "}
+                        <span className="mx-1 text-border">|</span>{" "}
+                        {student?.gradeLevel}{" "}
+                        <span className="mx-1 text-border">|</span> BY{" "}
+                        {assessor?.fullName}
+                        {result.submittedAt &&
+                          ` | ${new Date(result.submittedAt).toLocaleDateString()}`}
+                      </p>
+                    </div>
+                    <span
+                      className={`text-[10px] font-bold px-2.5 py-1.5 rounded-[3px] border uppercase tracking-widest ${statusColor[result.status] ?? "bg-gray-100 text-gray-600"}`}
+                    >
+                      {result.status}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
       </Card>

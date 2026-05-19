@@ -127,16 +127,18 @@ export default function AssignPage() {
   const isCycleClosed = selectedCycle?.status === "closed";
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="bg-gradient-to-r from-red-500 to-red-600 text-white p-8 rounded-2xl">
-        <h1 className="text-2xl font-bold mb-1">Role Assignment</h1>
-        <p className="text-red-100 text-sm">
-          Assign grade, class, competency, and role to each engineer per cycle
+    <div className="min-h-screen bg-gray-50 p-6 space-y-6">
+      <div className="bg-primary text-primary-foreground p-8 rounded-[3px] border border-border/50 shadow-sm">
+        <h1 className="text-3xl font-bold tracking-tight mb-2 uppercase">
+          Role Assignment
+        </h1>
+        <p className="text-primary-foreground/80 text-sm font-medium tracking-wide">
+          ASSIGN GRADE, CLASS, COMPETENCY, AND ROLE TO EACH ENGINEER PER CYCLE
         </p>
       </div>
 
       {/* Cycle Selector */}
-      <Card className="p-5">
+      <Card className="p-5 rounded-[3px] border-2 border-border shadow-sm">
         <div className="flex items-center gap-4 flex-wrap">
           <div className="flex-1 min-w-64">
             <label
@@ -179,30 +181,30 @@ export default function AssignPage() {
         </div>
       </Card>
 
-      <Card className="overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-100">
+      <Card className="overflow-hidden rounded-[3px] border-2 border-border shadow-sm">
+        <div className="overflow-x-auto scrollbar-thin">
+          <table className="w-full text-sm min-w-[900px]">
+            <thead className="bg-secondary/50 border-b-2 border-border">
               <tr>
-                <th className="text-left px-5 py-4 font-semibold text-gray-600">
+                <th className="text-left px-5 py-4 font-bold text-foreground uppercase tracking-widest text-xs">
                   User
                 </th>
-                <th className="text-left px-5 py-4 font-semibold text-gray-600">
+                <th className="text-left px-5 py-4 font-bold text-foreground uppercase tracking-widest text-xs">
                   Account Role
                 </th>
-                <th className="text-left px-5 py-4 font-semibold text-gray-600">
+                <th className="text-left px-5 py-4 font-bold text-foreground uppercase tracking-widest text-xs">
                   Grade
                 </th>
-                <th className="text-left px-5 py-4 font-semibold text-gray-600">
+                <th className="text-left px-5 py-4 font-bold text-foreground uppercase tracking-widest text-xs">
                   Class
                 </th>
-                <th className="text-left px-5 py-4 font-semibold text-gray-600">
+                <th className="text-left px-5 py-4 font-bold text-foreground uppercase tracking-widest text-xs">
                   Competency
                 </th>
-                <th className="text-left px-5 py-4 font-semibold text-gray-600">
+                <th className="text-left px-5 py-4 font-bold text-foreground uppercase tracking-widest text-xs">
                   Assigned Role
                 </th>
-                <th className="text-left px-5 py-4 font-semibold text-gray-600">
+                <th className="text-left px-5 py-4 font-bold text-foreground uppercase tracking-widest text-xs">
                   Action
                 </th>
               </tr>
@@ -218,16 +220,21 @@ export default function AssignPage() {
                 return (
                   <tr
                     key={user.id}
-                    className="hover:bg-gray-50/50 transition-colors"
+                    className="hover:bg-secondary/30 transition-colors"
                   >
                     <td className="px-5 py-4">
-                      <p className="font-medium text-gray-900">
+                      <p className="font-bold text-foreground">
                         {user.fullName}
                       </p>
-                      <p className="text-xs text-gray-400">{user.email}</p>
+                      <p className="text-xs text-muted-foreground font-medium">
+                        {user.email}
+                      </p>
                     </td>
                     <td className="px-5 py-4">
-                      <Badge variant="outline" className="capitalize">
+                      <Badge
+                        variant="outline"
+                        className="capitalize font-bold uppercase tracking-wider text-[10px]"
+                      >
                         {user.accountRole}
                       </Badge>
                     </td>
@@ -314,11 +321,7 @@ export default function AssignPage() {
                         </SelectTrigger>
                         <SelectContent>
                           {ROLES.map((r) => (
-                            <SelectItem
-                              key={r}
-                              value={r}
-                              className="capitalize"
-                            >
+                            <SelectItem key={r} value={r}>
                               {r}
                             </SelectItem>
                           ))}
@@ -328,7 +331,7 @@ export default function AssignPage() {
 
                     <td className="px-5 py-4">
                       {isSaved ? (
-                        <div className="flex items-center gap-1.5 text-green-600 text-xs font-medium">
+                        <div className="flex items-center gap-1.5 text-success text-xs font-bold uppercase tracking-wider">
                           <CheckCircle className="w-4 h-4" />
                           Saved
                         </div>
@@ -337,7 +340,7 @@ export default function AssignPage() {
                           size="sm"
                           onClick={() => handleSave(user.id)}
                           disabled={isCycleClosed}
-                          className="h-8 text-xs bg-red-500 hover:bg-red-600"
+                          className="h-8 text-xs bg-primary hover:bg-primary/90 font-bold"
                         >
                           <Save className="w-3 h-3 mr-1" />
                           Save

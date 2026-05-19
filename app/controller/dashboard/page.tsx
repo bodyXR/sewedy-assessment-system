@@ -40,18 +40,16 @@ function StatCard({
   color: string;
 }) {
   return (
-    <Card className="p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm text-gray-500 mb-1">{label}</p>
-          <p className={`text-3xl font-bold ${color}`}>{value}</p>
-        </div>
-        <div
-          className={`w-12 h-12 rounded-xl flex items-center justify-center ${color.replace("text-", "bg-").replace("-600", "-100").replace("-500", "-100")}`}
-        >
-          <Icon className={`w-6 h-6 ${color}`} />
-        </div>
-      </div>
+    <Card className="p-5 rounded-[3px] border-2 border-border shadow-sm text-center group hover:border-primary/50 transition-colors">
+      <Icon
+        className={`w-5 h-5 mx-auto mb-3 text-muted-foreground group-hover:text-primary transition-colors`}
+      />
+      <p className="text-3xl font-bold tracking-tight text-foreground">
+        {value}
+      </p>
+      <p className="text-[10px] font-bold text-muted-foreground mt-2 uppercase tracking-widest">
+        {label}
+      </p>
     </Card>
   );
 }
@@ -135,17 +133,21 @@ export default function ControllerDashboard() {
   }, [selectedCycle, filterCompetency, filterClass]);
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="min-h-screen bg-gray-50 p-6 space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-red-500 to-red-600 text-white p-8 rounded-2xl">
-        <h1 className="text-2xl font-bold mb-1">Controller Dashboard</h1>
-        <p className="text-red-100 text-sm">
-          {selectedCycle ? selectedCycle.name : "No cycle selected"}
+      <div className="bg-primary text-primary-foreground p-8 rounded-[3px] border border-border/50 shadow-sm">
+        <h1 className="text-3xl font-bold tracking-tight mb-2 uppercase">
+          Controller Dashboard
+        </h1>
+        <p className="text-primary-foreground/80 text-sm font-medium tracking-wide">
+          {selectedCycle
+            ? selectedCycle.name.toUpperCase()
+            : "NO CYCLE SELECTED"}
         </p>
       </div>
 
       {/* Filters */}
-      <Card className="p-4">
+      <Card className="p-5 rounded-[3px] border-2 border-border shadow-sm">
         <div className="flex flex-wrap gap-3">
           {/* Cycle */}
           <Select value={filterCycle} onValueChange={setFilterCycle}>
@@ -216,8 +218,8 @@ export default function ControllerDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Assessor Progress */}
-        <Card className="p-6">
-          <h2 className="text-base font-semibold text-gray-900 mb-4">
+        <Card className="p-6 rounded-[3px] border-2 border-border shadow-sm">
+          <h2 className="text-sm font-bold text-foreground mb-4 uppercase tracking-widest">
             Assessor Progress
           </h2>
           <div className="space-y-4">
@@ -252,8 +254,8 @@ export default function ControllerDashboard() {
         </Card>
 
         {/* Submissions by Competency */}
-        <Card className="p-6">
-          <h2 className="text-base font-semibold text-gray-900 mb-4">
+        <Card className="p-6 rounded-[3px] border-2 border-border shadow-sm">
+          <h2 className="text-sm font-bold text-foreground mb-4 uppercase tracking-widest">
             Submissions by Competency
           </h2>
           <div className="space-y-3">
@@ -293,12 +295,12 @@ export default function ControllerDashboard() {
       </div>
 
       {/* Overall completion bar */}
-      <Card className="p-6">
+      <Card className="p-6 rounded-[3px] border-2 border-border shadow-sm">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-base font-semibold text-gray-900">
+          <h2 className="text-sm font-bold text-foreground uppercase tracking-widest">
             Overall Completion
           </h2>
-          <span className="text-2xl font-bold text-red-500">
+          <span className="text-2xl font-bold text-primary tracking-tight">
             {stats.completion}%
           </span>
         </div>

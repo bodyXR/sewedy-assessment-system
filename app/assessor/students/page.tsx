@@ -65,22 +65,26 @@ export default function AssessorStudentsPage() {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-red-500 to-red-600 text-white p-8 rounded-2xl mb-6">
-        <h1 className="text-2xl font-bold mb-1">Students</h1>
-        <p className="text-red-100 text-sm mb-3">{roleCtx?.cycleName}</p>
-        <div className="flex items-center gap-2 flex-wrap">
+      <div className="bg-primary text-primary-foreground p-8 rounded-[3px] border border-border/50 mb-8 shadow-sm">
+        <h1 className="text-3xl font-bold tracking-tight mb-2 uppercase">
+          Students
+        </h1>
+        <p className="text-primary-foreground/80 text-sm mb-4 font-medium">
+          {roleCtx?.cycleName}
+        </p>
+        <div className="flex items-center gap-3 flex-wrap">
           {roleCtx?.competency && (
-            <span className="bg-white/20 text-white text-xs font-semibold px-3 py-1 rounded-full">
+            <span className="bg-background text-foreground text-xs font-bold px-3 py-1.5 uppercase tracking-wider border border-border">
               {roleCtx.competency}
             </span>
           )}
           {roleCtx?.grade && (
-            <span className="bg-white/20 text-white text-xs font-semibold px-3 py-1 rounded-full">
+            <span className="bg-background text-foreground text-xs font-bold px-3 py-1.5 uppercase tracking-wider border border-border">
               {roleCtx.grade}
             </span>
           )}
           {roleCtx?.classGroup && (
-            <span className="bg-white text-red-600 text-sm font-bold px-3 py-1 rounded-full">
+            <span className="bg-background text-primary text-sm font-bold px-4 py-1.5 uppercase tracking-wider border border-border">
               Class {roleCtx.classGroup}
             </span>
           )}
@@ -125,17 +129,20 @@ export default function AssessorStudentsPage() {
           </div>
         </div>
 
-        <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center justify-between">
+        <div className="mt-6 bg-secondary/50 border-l-4 border-l-primary rounded-[3px] p-5 flex items-center justify-between">
           <div>
-            <p className="font-semibold text-blue-900 text-sm">
+            <p className="font-bold text-foreground text-sm uppercase tracking-wide">
               {competencyData?.name ?? roleCtx?.competency}
             </p>
-            <p className="text-xs text-blue-700 mt-0.5">
+            <p className="text-xs text-muted-foreground mt-1">
               {competencyData?.description}
             </p>
           </div>
-          <Badge variant="secondary" className="text-sm px-3 py-1.5">
-            <Users className="w-4 h-4 mr-1.5" />
+          <Badge
+            variant="outline"
+            className="text-sm px-4 py-2 font-bold bg-background rounded-[3px] border-border"
+          >
+            <Users className="w-4 h-4 mr-2 text-primary" />
             {myStudents.length} Students
           </Badge>
         </div>
@@ -167,30 +174,36 @@ export default function AssessorStudentsPage() {
               <Card
                 key={student.id}
                 onClick={() => router.push(`/assessor/assess/${student.id}`)}
-                className={`p-4 cursor-pointer transition-all hover:shadow-lg ${
+                className={`p-5 cursor-pointer transition-all hover:shadow-md border-2 rounded-[3px] group ${
                   isAssessed
-                    ? "border-green-300 bg-green-50"
-                    : "border-gray-200 hover:border-red-400"
+                    ? "border-primary/20 bg-primary/5"
+                    : "border-border hover:border-primary/50 bg-card"
                 }`}
               >
-                <div className="flex items-start justify-between mb-3">
+                <div className="flex items-start justify-between mb-4">
                   <div>
-                    <p className="font-semibold text-gray-900">
+                    <p className="font-bold text-foreground text-lg group-hover:text-primary transition-colors">
                       {student.fullName}
                     </p>
-                    <p className="text-sm text-gray-500">
-                      {student.code} · {student.gradeLevel}
+                    <p className="text-sm text-muted-foreground font-medium mt-1">
+                      {student.code} <span className="mx-1 text-border">|</span>{" "}
+                      {student.gradeLevel}
                     </p>
                   </div>
                   {isAssessed && (
-                    <Badge className="bg-amber-500 text-white text-xs">
-                      Submitted
+                    <Badge className="bg-primary text-primary-foreground text-xs uppercase tracking-wider rounded-[3px] font-bold">
+                      Assessed
                     </Badge>
                   )}
                 </div>
-                <p className="text-sm text-gray-400">
-                  {isAssessed ? "Tap to view →" : "Tap to assess →"}
-                </p>
+                <div className="flex items-center justify-between mt-4 pt-4 border-t border-border/50">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground group-hover:text-foreground transition-colors">
+                    {isAssessed ? "Review Assessment" : "Start Assessment"}
+                  </p>
+                  <span className="text-muted-foreground group-hover:text-primary transition-colors transform group-hover:translate-x-1">
+                    →
+                  </span>
+                </div>
               </Card>
             );
           })}

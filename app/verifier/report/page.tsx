@@ -77,18 +77,20 @@ export default function VerifierReportPage() {
   };
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="bg-gradient-to-r from-red-500 to-red-600 text-white p-8 rounded-2xl">
-        <h1 className="text-2xl font-bold mb-1">Send Report to Controller</h1>
-        <p className="text-red-100 text-sm">
-          {activeCycle ? activeCycle.name : "No active cycle"} · End-of-round
-          monitoring summary
+    <div className="min-h-screen bg-gray-50 p-6 space-y-6">
+      <div className="bg-primary text-primary-foreground p-8 rounded-[3px] border border-border/50 shadow-sm">
+        <h1 className="text-3xl font-bold tracking-tight mb-2 uppercase">
+          Send Report to Controller
+        </h1>
+        <p className="text-primary-foreground/80 text-sm font-medium tracking-wide">
+          {activeCycle ? activeCycle.name.toUpperCase() : "NO ACTIVE CYCLE"} ·
+          END-OF-ROUND MONITORING SUMMARY
         </p>
       </div>
 
       {/* By Competency */}
-      <Card className="p-6">
-        <h2 className="font-semibold text-gray-900 mb-4">
+      <Card className="p-6 rounded-[3px] border-2 border-border shadow-sm">
+        <h2 className="text-sm font-bold text-foreground mb-4 uppercase tracking-widest">
           Progress by Competency
         </h2>
         <div className="space-y-3">
@@ -122,17 +124,26 @@ export default function VerifierReportPage() {
       </Card>
 
       {/* By Class */}
-      <Card className="p-6">
-        <h2 className="font-semibold text-gray-900 mb-4">Progress by Class</h2>
+      <Card className="p-6 rounded-[3px] border-2 border-border shadow-sm">
+        <h2 className="text-sm font-bold text-foreground mb-4 uppercase tracking-widest">
+          Progress by Class
+        </h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {byClass.map((c) => (
-            <div key={c.cls} className="bg-gray-50 rounded-xl p-4 text-center">
-              <p className="font-semibold text-gray-900">{c.cls}</p>
-              <p className="text-2xl font-bold text-red-500 mt-1">
+            <div
+              key={c.cls}
+              className="bg-secondary/50 rounded-[3px] border border-border p-5 text-center"
+            >
+              <p className="font-bold text-foreground uppercase tracking-wider text-sm">
+                {c.cls}
+              </p>
+              <p className="text-3xl font-bold text-primary mt-2 tracking-tight">
                 {c.assessed}
               </p>
-              <p className="text-xs text-gray-400">of {c.students} assessed</p>
-              <p className="text-xs text-green-600 mt-1">
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">
+                of {c.students} assessed
+              </p>
+              <p className="text-xs text-success font-bold mt-2 uppercase tracking-wider">
                 {c.approved} approved
               </p>
             </div>
@@ -141,8 +152,10 @@ export default function VerifierReportPage() {
       </Card>
 
       {/* Report Notes */}
-      <Card className="p-6">
-        <h2 className="font-semibold text-gray-900 mb-3">Report Notes</h2>
+      <Card className="p-6 rounded-[3px] border-2 border-border shadow-sm">
+        <h2 className="text-sm font-bold text-foreground mb-3 uppercase tracking-widest">
+          Report Notes
+        </h2>
         <p className="text-sm text-gray-500 mb-3">
           Summarize your observations for this cycle. This will be sent to the
           Controller.
@@ -158,16 +171,16 @@ export default function VerifierReportPage() {
       </Card>
 
       {sent ? (
-        <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-xl">
-          <CheckCircle className="w-5 h-5 text-green-600 shrink-0" />
-          <p className="text-sm font-medium text-green-700">
+        <div className="flex items-center gap-3 p-5 bg-success/10 border-2 border-success/20 rounded-[3px]">
+          <CheckCircle className="w-5 h-5 text-success shrink-0" />
+          <p className="text-sm font-bold text-success uppercase tracking-wider">
             Report sent to Controller successfully.
           </p>
         </div>
       ) : (
         <Button
           onClick={handleSend}
-          className="bg-red-500 hover:bg-red-600 gap-2"
+          className="bg-primary hover:bg-primary/90 gap-2 font-bold"
           size="lg"
         >
           <Send className="w-5 h-5" />

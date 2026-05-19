@@ -66,19 +66,23 @@ export default function AssessStudentPage() {
       </button>
 
       {/* Header */}
-      <div className="bg-gradient-to-r from-red-500 to-red-600 text-white p-6 rounded-2xl">
+      <div className="bg-primary text-primary-foreground p-6 rounded-[3px] border border-border/50 shadow-sm">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold">{student.fullName}</h1>
-            <p className="text-red-100 text-sm mt-0.5">
-              {student.code} · {student.gradeLevel} · {student.competency}
+            <h1 className="text-2xl font-bold tracking-tight uppercase">
+              {student.fullName}
+            </h1>
+            <p className="text-primary-foreground/80 text-sm mt-1 font-medium tracking-wide">
+              {student.code} <span className="mx-1">|</span>{" "}
+              {student.gradeLevel} <span className="mx-1">|</span>{" "}
+              {student.competency}
             </p>
           </div>
           {existingResult && (
             <Badge
               className={
                 statusBadgeClass[existingResult.status] ??
-                "bg-white/20 text-white"
+                "bg-background text-foreground"
               }
             >
               {existingResult.status}

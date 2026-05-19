@@ -25,11 +25,13 @@ export default function AssessorCompetenciesPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="bg-gradient-to-r from-red-500 to-red-600 text-white p-8 rounded-2xl">
-        <h1 className="text-2xl font-bold mb-1">Competencies</h1>
-        <p className="text-red-100 text-sm">
-          {filtered.length} competenc{filtered.length === 1 ? "y" : "ies"}{" "}
-          across all grade levels
+      <div className="bg-primary text-primary-foreground p-8 rounded-[3px] border border-border/50 shadow-sm">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-2 uppercase">
+          Competencies
+        </h1>
+        <p className="text-primary-foreground/80 text-xs sm:text-sm font-medium">
+          {filtered.length} COMPETENC{filtered.length === 1 ? "Y" : "IES"}{" "}
+          ACROSS ALL GRADE LEVELS
         </p>
       </div>
 

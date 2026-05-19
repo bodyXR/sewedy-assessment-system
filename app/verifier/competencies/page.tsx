@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CompetenciesFilters } from "@/components/competencies/competencies-filters";
@@ -11,6 +12,7 @@ import { mockCompetencies } from "@/lib/mock-data";
 import type { Competency, GradeLevel } from "@/lib/types";
 
 export default function VerifierCompetenciesPage() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedGrade, setSelectedGrade] = useState<GradeLevel | "All">("All");
   const [competencies, setCompetencies] =
@@ -69,26 +71,27 @@ export default function VerifierCompetenciesPage() {
   };
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="bg-gradient-to-r from-red-500 to-red-600 text-white p-8 rounded-2xl flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold mb-1">Competencies</h1>
-          <p className="text-red-100 text-sm">
-            Manage {filteredCompetencies.length} competenc
-            {filteredCompetencies.length === 1 ? "y" : "ies"} across all grade
-            levels
-          </p>
+    <div className="min-h-screen bg-gray-50 p-6 space-y-6">
+      <div className="bg-primary text-primary-foreground p-8 rounded-[3px] border border-border/50 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-2 uppercase">
+              Competencies
+            </h1>
+            <p className="text-primary-foreground/80 text-xs sm:text-sm font-medium tracking-wide">
+              MANAGE {filteredCompetencies.length} COMPETENC
+              {filteredCompetencies.length === 1 ? "Y" : "IES"} ACROSS ALL GRADE
+              LEVELS
+            </p>
+          </div>
+          <Button
+            onClick={() => router.push("/verifier/competencies/add")}
+            className="bg-background text-primary hover:bg-background/90 font-bold border border-border shrink-0"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Competency
+          </Button>
         </div>
-        <Button
-          onClick={() => {
-            setEditingCompetency(null);
-            setShowModal(true);
-          }}
-          className="bg-white text-red-600 hover:bg-red-50 font-semibold"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Add Competency
-        </Button>
       </div>
 
       <CompetenciesFilters
