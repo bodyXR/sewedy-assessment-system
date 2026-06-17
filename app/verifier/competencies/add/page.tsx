@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,9 +16,19 @@ import {
 } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
 import { AlertDialogCustom } from "@/components/ui/alert-dialog-custom";
+import { useCreateCourse } from "@/hooks/use-api";
+import { useAuth } from "@/lib/auth-context";
+import { api } from "@/lib/api-client";
 import type { GradeLevel } from "@/lib/types";
 
 const GRADE_LEVELS: GradeLevel[] = ["Junior", "Wheeler", "Senior"];
+
+// Map grade levels to LevelStatusId (based on typical database schema)
+const GRADE_LEVEL_TO_ID: Record<GradeLevel, number> = {
+  Junior: 1,
+  Wheeler: 2,
+  Senior: 3,
+};
 
 interface Subtask {
   name: string;
@@ -32,13 +42,20 @@ interface Task {
 
 export default function VerifierAddCompetencyPage() {
   const router = useRouter();
+  const { user } = useAuth();
+  const { create, isLoading: isCreating } = useCreateCourse();
+
   const [name, setName] = useState("");
   const [gradeLevel, setGradeLevel] = useState<GradeLevel>("Junior");
   const [description, setDescription] = useState("");
+  const [durationHours, setDurationHours] = useState(40);
   const [tasks, setTasks] = useState<Task[]>([
     { name: "", subtasks: [{ name: "", grade: 0 }] },
   ]);
   const [showAlert, setShowAlert] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const isSubmitting = isCreating;
 
   const handleAddTask = () => {
     setTasks([...tasks, { name: "", subtasks: [{ name: "", grade: 0 }] }]);
@@ -93,27 +110,71 @@ export default function VerifierAddCompetencyPage() {
   };
 
   const isTaskValid = (task: Task) => {
-    return getTaskTotal(task) === 100;
+    // Check if total equals 100
+    if (getTaskTotal(task) !== 100) return false;
+    // Check if any subtask has 0 or negative points
+    if (task.subtasks.some((st) => st.grade <= 0)) return false;
+    return true;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Validate all tasks
     const invalidTasks = tasks.filter((task) => !isTaskValid(task));
     if (invalidTasks.length > 0) {
+      setErrorMessage(
+        "Each task's subtasks must sum to exactly 100 and all subtasks must have points greater than 0.",
+      );
       setShowAlert(true);
       return;
     }
 
-    // TODO: Save competency to backend
-    console.log({
-      name,
-      gradeLevel,
-      description,
-      tasks: tasks.filter((t) => t.name.trim() !== ""),
-    });
-    router.push("/verifier/competencies");
+    try {
+      // Step 1: Create competency (course)
+      const course = await create({
+        title: name,
+        description: description,
+        durationHours: durationHours,
+        levelStatusId: GRADE_LEVEL_TO_ID[gradeLevel],
+      });
+
+      if (!course?.id) {
+        throw new Error("Failed to create course");
+      }
+
+      // Step 2: Create assignments (CourseRoundAssignments) for each task
+      // Each task becomes an assignment with the total grade being sum of subtasks
+      const now = new Date();
+      const defaultDeadline = new Date(now);
+      defaultDeadline.setMonth(defaultDeadline.getMonth() + 1); // Default 1 month from now
+
+      for (const task of tasks) {
+        const totalGrade = getTaskTotal(task);
+
+        // Create a description that includes subtask breakdown
+        const subtaskBreakdown = task.subtasks
+          .map((st) => `${st.name}: ${st.grade} points`)
+          .join(", ");
+
+        await api.courseRoundAssignments.create({
+          title: task.name,
+          description: `Subtasks: ${subtaskBreakdown}`,
+          deadline: defaultDeadline.toISOString(),
+          totalGrade: totalGrade,
+          courseId: course.id,
+          instructorId: user?.accountId || 0,
+        });
+      }
+
+      router.push("/verifier/competencies");
+    } catch (error) {
+      console.error("Error creating competency:", error);
+      setErrorMessage(
+        error instanceof Error ? error.message : "Failed to create competency",
+      );
+      setShowAlert(true);
+    }
   };
 
   return (
@@ -187,6 +248,21 @@ export default function VerifierAddCompetencyPage() {
               />
             </div>
 
+            {/* Duration Hours */}
+            <div>
+              <Label htmlFor="duration">Duration (hours) *</Label>
+              <Input
+                id="duration"
+                type="number"
+                value={durationHours}
+                onChange={(e) => setDurationHours(Number(e.target.value))}
+                placeholder="40"
+                required
+                min="1"
+                className="mt-1.5"
+              />
+            </div>
+
             {/* Tasks */}
             <div>
               <Label>Tasks *</Label>
@@ -252,7 +328,7 @@ export default function VerifierAddCompetencyPage() {
                               }
                               placeholder="Grade"
                               required
-                              min="0"
+                              min="0.01"
                               max="100"
                               step="0.01"
                               className="w-24"
@@ -315,13 +391,22 @@ export default function VerifierAddCompetencyPage() {
               <Button
                 type="submit"
                 className="bg-red-500 hover:bg-red-600 text-white"
+                disabled={isSubmitting}
               >
-                Create Competency
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  "Create Competency"
+                )}
               </Button>
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => router.back()}
+                disabled={isSubmitting}
               >
                 Cancel
               </Button>
@@ -333,8 +418,11 @@ export default function VerifierAddCompetencyPage() {
       <AlertDialogCustom
         isOpen={showAlert}
         onClose={() => setShowAlert(false)}
-        title="Invalid Task Grades"
-        description="Each task's subtasks must sum to exactly 100. Please check your task grades and try again."
+        title={errorMessage.includes("sum") ? "Invalid Task Grades" : "Error"}
+        description={
+          errorMessage ||
+          "Each task's subtasks must sum to exactly 100. Please check your task grades and try again."
+        }
       />
     </div>
   );

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
+import { Loader2 } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -9,144 +10,113 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  mockStudents,
-  mockResults,
-  mockCycles,
-  mockUsers,
-  mockRoleAssignments,
-} from "@/lib/mock-data";
+import { useCourses, useCourseRounds } from "@/hooks/use-api";
 
-const COMPETENCIES = [
-  "All",
-  "Structural",
-  "Civil",
-  "Electrical",
-  "Mechanical",
-  "Software",
-];
-const CLASSES = ["All", "Junior", "Wheeler", "Senior"];
+const API_BASE_URL = "http://sewedyassessmentsys.runasp.net/api";
+
+function getAuthToken(): string | null {
+  if (typeof window === "undefined") return null;
+  const user = localStorage.getItem("user");
+  if (!user) return null;
+  try {
+    const parsed = JSON.parse(user);
+    return parsed.token || null;
+  } catch {
+    return null;
+  }
+}
 
 export default function StatisticsPage() {
-  const [filterCycle, setFilterCycle] = useState("all");
-  const [filterCompetency, setFilterCompetency] = useState("All");
-  const [filterClass, setFilterClass] = useState("All");
+  const [filterCourseId, setFilterCourseId] = useState<number | null>(null);
+  const [filterRoundId, setFilterRoundId] = useState<number | null>(null);
+  const [statisticsData, setStatisticsData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  const filtered = useMemo(() => {
-    const students = mockStudents.filter((s) => {
-      if (filterCompetency !== "All" && s.competency !== filterCompetency)
-        return false;
-      if (filterClass !== "All" && s.gradeLevel !== filterClass) return false;
-      return true;
-    });
+  const { data: courses } = useCourses();
+  const { data: courseRounds } = useCourseRounds();
 
-    const results = mockResults.filter((r) => {
-      if (filterCycle !== "all" && r.cycleId !== filterCycle) return false;
-      const student = mockStudents.find((s) => s.id === r.studentId);
-      if (filterCompetency !== "All" && r.competency !== filterCompetency)
-        return false;
-      if (filterClass !== "All" && student?.gradeLevel !== filterClass)
-        return false;
-      return true;
-    });
+  const activeCycle =
+    courseRounds?.find((c) => c.statusId === 1) || courseRounds?.[0];
 
-    const submitted = results.filter((r) => r.status !== "draft");
-    const approved = results.filter((r) => r.status === "approved");
+  useEffect(() => {
+    if (activeCycle && !filterRoundId) {
+      setFilterRoundId(activeCycle.id);
+    }
+  }, [activeCycle, filterRoundId]);
 
-    // Score distribution buckets
-    const allScores = submitted.flatMap((r) => Object.values(r.scores));
-    const buckets = [
-      { label: "0–49", count: allScores.filter((s) => s < 50).length },
-      {
-        label: "50–69",
-        count: allScores.filter((s) => s >= 50 && s < 70).length,
-      },
-      {
-        label: "70–79",
-        count: allScores.filter((s) => s >= 70 && s < 80).length,
-      },
-      {
-        label: "80–89",
-        count: allScores.filter((s) => s >= 80 && s < 90).length,
-      },
-      { label: "90–100", count: allScores.filter((s) => s >= 90).length },
-    ];
-    const maxBucket = Math.max(...buckets.map((b) => b.count), 1);
+  useEffect(() => {
+    const fetchStatistics = async () => {
+      try {
+        setLoading(true);
+        const params = new URLSearchParams();
+        if (filterRoundId)
+          params.append("courseRoundId", filterRoundId.toString());
+        if (filterCourseId)
+          params.append("courseId", filterCourseId.toString());
 
-    // Per-competency stats
-    const compStats = COMPETENCIES.slice(1)
-      .map((comp) => {
-        const compStudents = students.filter((s) => s.competency === comp);
-        const compResults = submitted.filter((r) => r.competency === comp);
-        const compApproved = approved.filter(
-          (r) => r.competency === comp,
-        ).length;
-        const scores = compResults.flatMap((r) => Object.values(r.scores));
-        const avg =
-          scores.length > 0
-            ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
-            : null;
-        return {
-          comp,
-          total: compStudents.length,
-          assessed: compResults.length,
-          approved: compApproved,
-          avg,
+        const token = getAuthToken();
+        const headers: Record<string, string> = {
+          "Content-Type": "application/json",
         };
-      })
-      .filter((c) => c.total > 0);
+        if (token) {
+          headers["Authorization"] = `Bearer ${token}`;
+        }
 
-    // Per-class stats
-    const classStats = CLASSES.slice(1)
-      .map((cls) => {
-        const clsStudents = students.filter((s) => s.gradeLevel === cls);
-        const clsResults = submitted.filter((r) => {
-          const s = mockStudents.find((st) => st.id === r.studentId);
-          return s?.gradeLevel === cls;
+        const url = `${API_BASE_URL}/Dashboard/statistics?${params.toString()}`;
+        const response = await fetch(url, {
+          headers,
+          mode: "cors",
         });
-        return { cls, total: clsStudents.length, assessed: clsResults.length };
-      })
-      .filter((c) => c.total > 0);
 
-    // Per-assessor stats
-    const assessorStats = mockRoleAssignments
-      .filter((ra) => {
-        if (filterCycle !== "all" && ra.cycleId !== filterCycle) return false;
-        if (filterCompetency !== "All" && ra.competency !== filterCompetency)
-          return false;
-        if (filterClass !== "All" && ra.grade !== filterClass) return false;
-        return ra.assignedRole === "assessor";
-      })
-      .map((ra) => {
-        const user = mockUsers.find((u) => u.id === ra.userId);
-        const raResults = submitted.filter((r) => r.assessorId === ra.userId);
-        const raStudents = students.filter(
-          (s) => s.competency === ra.competency && s.gradeLevel === ra.grade,
-        );
-        return {
-          name: user?.fullName ?? ra.userId,
-          competency: ra.competency,
-          classGroup: ra.classGroup,
-          assessed: raResults.length,
-          total: raStudents.length,
-        };
-      });
+        if (!response.ok) {
+          throw new Error("Failed to fetch statistics");
+        }
 
-    return {
-      totalStudents: students.length,
-      totalSubmitted: submitted.length,
-      totalApproved: approved.length,
-      completion:
-        students.length > 0
-          ? Math.round((submitted.length / students.length) * 100)
-          : 0,
-      buckets,
-      maxBucket,
-      compStats,
-      classStats,
-      assessorStats,
+        const data = await response.json();
+        setStatisticsData(data);
+      } catch (error) {
+        console.error("Failed to fetch statistics:", error);
+        setStatisticsData(null);
+      } finally {
+        setLoading(false);
+      }
     };
-  }, [filterCycle, filterCompetency, filterClass]);
+
+    if (filterRoundId) {
+      fetchStatistics();
+    } else {
+      setLoading(false);
+    }
+  }, [filterRoundId, filterCourseId]);
+
+  const summary = statisticsData?.summary || {
+    totalStudents: 0,
+    assessed: 0,
+    approved: 0,
+    completionPercent: 0,
+  };
+  const scoreDistribution = statisticsData?.scoreDistribution || [];
+  const progressByClass = statisticsData?.progressByClass || [];
+  const competencyBreakdown = statisticsData?.competencyBreakdown || [];
+  const assessorPerformance = statisticsData?.assessorPerformance || [];
+
+  const maxBucket =
+    scoreDistribution.length > 0
+      ? Math.max(...scoreDistribution.map((b: any) => b.studentCount), 1)
+      : 1;
+
+  const isLoading = loading;
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
+        <Card className="p-12 flex items-center gap-3">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <span className="text-gray-600">Loading statistics...</span>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-6 space-y-6">
@@ -162,39 +132,36 @@ export default function StatisticsPage() {
       {/* Filters */}
       <Card className="p-5 rounded-[3px] border-2 border-border shadow-sm">
         <div className="flex flex-wrap gap-3">
-          <Select value={filterCycle} onValueChange={setFilterCycle}>
-            <SelectTrigger className="w-52 h-9 text-xs">
-              <SelectValue />
+          <Select
+            value={filterRoundId?.toString() || ""}
+            onValueChange={(v) => setFilterRoundId(v ? Number(v) : null)}
+          >
+            <SelectTrigger className="w-40 h-9 text-xs">
+              <SelectValue placeholder="Select Round" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Cycles</SelectItem>
-              {mockCycles.map((c) => (
-                <SelectItem key={c.id} value={c.id}>
-                  {c.name}
+              {courseRounds?.map((round) => (
+                <SelectItem key={round.id} value={round.id.toString()}>
+                  Round {round.roundNumber}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          <Select value={filterCompetency} onValueChange={setFilterCompetency}>
+
+          <Select
+            value={filterCourseId?.toString() || "All"}
+            onValueChange={(v) =>
+              setFilterCourseId(v === "All" ? null : Number(v))
+            }
+          >
             <SelectTrigger className="w-40 h-9 text-xs">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {COMPETENCIES.map((c) => (
-                <SelectItem key={c} value={c}>
-                  {c === "All" ? "All Competencies" : c}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={filterClass} onValueChange={setFilterClass}>
-            <SelectTrigger className="w-36 h-9 text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {CLASSES.map((c) => (
-                <SelectItem key={c} value={c}>
-                  {c === "All" ? "All Classes" : c}
+              <SelectItem value="All">All Competencies</SelectItem>
+              {courses?.map((c) => (
+                <SelectItem key={c.id} value={c.id.toString()}>
+                  {c.title}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -207,22 +174,22 @@ export default function StatisticsPage() {
         {[
           {
             label: "Total Students",
-            value: filtered.totalStudents,
+            value: summary.totalStudents,
             color: "text-foreground",
           },
           {
             label: "Assessed",
-            value: filtered.totalSubmitted,
+            value: summary.assessed,
             color: "text-primary",
           },
           {
             label: "Approved",
-            value: filtered.totalApproved,
+            value: summary.approved,
             color: "text-success",
           },
           {
             label: "Completion",
-            value: `${filtered.completion}%`,
+            value: `${Math.round(summary.completionPercent)}%`,
             color: "text-primary",
           },
         ].map((s) => (
@@ -240,33 +207,33 @@ export default function StatisticsPage() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6">
         {/* Score distribution bar chart */}
         <Card className="p-6 rounded-[3px] border-2 border-border shadow-sm">
           <h2 className="text-sm font-bold text-foreground mb-5 uppercase tracking-widest">
             Score Distribution
           </h2>
           <div className="flex items-end justify-between gap-3 h-40 border-b-2 border-border pb-2">
-            {filtered.buckets.map((b) => {
+            {scoreDistribution.map((b: any) => {
               const heightPercent =
-                filtered.maxBucket > 0
-                  ? (b.count / filtered.maxBucket) * 100
-                  : 0;
+                maxBucket > 0 ? (b.studentCount / maxBucket) * 100 : 0;
               return (
                 <div
                   key={b.label}
                   className="flex-1 flex flex-col items-center gap-2 h-full justify-end"
                 >
-                  {b.count > 0 && (
+                  {b.studentCount > 0 && (
                     <span className="text-xs font-bold text-foreground mb-1">
-                      {b.count}
+                      {b.studentCount}
                     </span>
                   )}
                   <div
                     className="w-full bg-primary rounded-t-[3px] transition-all duration-500"
                     style={{
                       height:
-                        b.count > 0 ? `${Math.max(heightPercent, 5)}%` : "0%",
+                        b.studentCount > 0
+                          ? `${Math.max(heightPercent, 5)}%`
+                          : "0%",
                     }}
                   />
                 </div>
@@ -274,47 +241,13 @@ export default function StatisticsPage() {
             })}
           </div>
           <div className="flex items-center justify-between gap-3 mt-2">
-            {filtered.buckets.map((b) => (
+            {scoreDistribution.map((b: any) => (
               <div key={`label-${b.label}`} className="flex-1 text-center">
                 <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                   {b.label}
                 </span>
               </div>
             ))}
-          </div>
-        </Card>
-
-        {/* Per-class progress */}
-        <Card className="p-6 rounded-[3px] border-2 border-border shadow-sm">
-          <h2 className="text-sm font-bold text-foreground mb-4 uppercase tracking-widest">
-            Progress by Class
-          </h2>
-          <div className="space-y-4">
-            {filtered.classStats.map(({ cls, total, assessed }) => (
-              <div key={cls}>
-                <div className="flex items-center justify-between text-sm mb-2">
-                  <span className="font-bold text-foreground uppercase tracking-wider">
-                    {cls}
-                  </span>
-                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                    {assessed}/{total}
-                  </span>
-                </div>
-                <div className="w-full bg-secondary/50 rounded-full h-2.5 border border-border overflow-hidden">
-                  <div
-                    className="bg-primary h-2.5 rounded-full transition-all"
-                    style={{
-                      width: total > 0 ? `${(assessed / total) * 100}%` : "0%",
-                    }}
-                  />
-                </div>
-              </div>
-            ))}
-            {filtered.classStats.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-4">
-                No data
-              </p>
-            )}
           </div>
         </Card>
       </div>
@@ -351,16 +284,16 @@ export default function StatisticsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {filtered.compStats.map((cs) => (
+              {competencyBreakdown.map((cs: any) => (
                 <tr
-                  key={cs.comp}
+                  key={cs.courseId}
                   className="hover:bg-secondary/30 transition-colors"
                 >
                   <td className="px-6 py-4 font-bold text-foreground uppercase tracking-wider">
-                    {cs.comp}
+                    {cs.competencyName}
                   </td>
                   <td className="px-6 py-4 font-bold text-muted-foreground">
-                    {cs.total}
+                    {cs.students}
                   </td>
                   <td className="px-6 py-4 font-bold text-muted-foreground">
                     {cs.assessed}
@@ -369,11 +302,11 @@ export default function StatisticsPage() {
                     {cs.approved}
                   </td>
                   <td className="px-6 py-4">
-                    {cs.avg !== null ? (
+                    {cs.avgScorePercent !== null ? (
                       <span
-                        className={`font-bold tracking-tight ${cs.avg >= 70 ? "text-success" : cs.avg >= 50 ? "text-warning" : "text-destructive"}`}
+                        className={`font-bold tracking-tight ${cs.avgScorePercent >= 70 ? "text-success" : cs.avgScorePercent >= 50 ? "text-warning" : "text-destructive"}`}
                       >
-                        {cs.avg}%
+                        {Math.round(cs.avgScorePercent)}%
                       </span>
                     ) : (
                       <span className="text-muted-foreground">—</span>
@@ -386,15 +319,15 @@ export default function StatisticsPage() {
                           className="bg-primary h-2 rounded-full transition-all"
                           style={{
                             width:
-                              cs.total > 0
-                                ? `${(cs.assessed / cs.total) * 100}%`
+                              cs.students > 0
+                                ? `${(cs.assessed / cs.students) * 100}%`
                                 : "0%",
                           }}
                         />
                       </div>
                       <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                        {cs.total > 0
-                          ? Math.round((cs.assessed / cs.total) * 100)
+                        {cs.students > 0
+                          ? Math.round((cs.assessed / cs.students) * 100)
                           : 0}
                         %
                       </span>
@@ -402,7 +335,7 @@ export default function StatisticsPage() {
                   </td>
                 </tr>
               ))}
-              {filtered.compStats.length === 0 && (
+              {competencyBreakdown.length === 0 && (
                 <tr>
                   <td
                     colSpan={6}
@@ -426,16 +359,21 @@ export default function StatisticsPage() {
         </div>
         <div className="overflow-x-auto scrollbar-thin">
           <div className="divide-y divide-gray-50 min-w-[640px]">
-            {filtered.assessorStats.map((a, i) => (
+            {assessorPerformance.map((a: any, i: number) => (
               <div
                 key={i}
                 className="flex items-center justify-between px-6 py-4 hover:bg-secondary/30 transition-colors"
               >
                 <div>
-                  <p className="font-bold text-foreground">{a.name}</p>
+                  <p className="font-bold text-foreground">{a.assessorName}</p>
                   <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mt-1">
-                    {a.competency} <span className="mx-1 text-border">|</span>{" "}
-                    {a.classGroup}
+                    {a.competencyName}{" "}
+                    {a.className && (
+                      <>
+                        <span className="mx-1 text-border">|</span>{" "}
+                        {a.className}
+                      </>
+                    )}
                   </p>
                 </div>
                 <div className="flex items-center gap-4">
@@ -445,18 +383,18 @@ export default function StatisticsPage() {
                       style={{
                         width:
                           a.total > 0
-                            ? `${(a.assessed / a.total) * 100}%`
+                            ? `${(a.submitted / a.total) * 100}%`
                             : "0%",
                       }}
                     />
                   </div>
                   <span className="text-xs font-bold text-muted-foreground w-16 text-right uppercase tracking-wider">
-                    {a.assessed}/{a.total}
+                    {a.submitted}/{a.total}
                   </span>
                 </div>
               </div>
             ))}
-            {filtered.assessorStats.length === 0 && (
+            {assessorPerformance.length === 0 && (
               <div className="px-6 py-8 text-center text-muted-foreground">
                 No assessors match the current filters.
               </div>

@@ -1,44 +1,80 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Clock, FileText, Eye } from "lucide-react";
+import { CheckCircle, XCircle, Eye, Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/lib/auth-context";
-import { mockResults, mockStudents } from "@/lib/mock-data";
-import type { ResultStatus } from "@/lib/types";
+import { useApiQuery } from "@/hooks/use-api";
+import { api } from "@/lib/api-client";
 
-const statusConfig: Record<
-  ResultStatus,
-  { label: string; icon: React.ElementType; badge: string }
-> = {
-  draft: {
-    label: "Draft",
-    icon: FileText,
-    badge: "bg-muted text-muted-foreground border-border",
-  },
-  submitted: {
-    label: "Submitted",
-    icon: Clock,
-    badge: "bg-primary/10 text-primary border-primary/20",
-  },
-  approved: {
-    label: "Submitted",
-    icon: Clock,
-    badge: "bg-success/10 text-success border-success/20",
-  },
-};
+const TRIAL_LETTERS = ["A", "B", "C", "D"];
+const PASS_STATUS_ID = 53;
+const FAIL_STATUS_ID = 54;
 
 export default function SubmissionsPage() {
   const router = useRouter();
   const { user } = useAuth();
 
-  const myResults = mockResults.filter((r) => r.assessorId === user?.id);
+  // Fetch all results submitted by this assessor
+  const { data: allResults, isLoading } = useApiQuery(
+    () =>
+      user?.accountId ? api.competencyResults.getAll({}) : Promise.resolve([]),
+    [user?.accountId],
+  );
+
+  // Filter to only results by this assessor
+  const myResults =
+    allResults?.filter((r) => r.assessorId === user?.accountId) || [];
+
+  // Group results by student to show latest attempt
+  const resultsByStudent = myResults.reduce(
+    (acc, result) => {
+      const key = `${result.studentId}-${result.courseId}`;
+      if (!acc[key]) {
+        acc[key] = [];
+      }
+      acc[key].push(result);
+      return acc;
+    },
+    {} as Record<string, typeof myResults>,
+  );
+
+  // Get the most recent result for each student
+  const latestResults = Object.values(resultsByStudent).map((results) => {
+    const sorted = results.sort(
+      (a, b) =>
+        new Date(b.gradedAt || b.createdAt).getTime() -
+        new Date(a.gradedAt || a.createdAt).getTime(),
+    );
+    return {
+      ...sorted[0],
+      attemptCount: results.length,
+      hasPassed: results.some((r) => r.resultStatusId === PASS_STATUS_ID),
+    };
+  });
 
   const counts = {
-    submitted: myResults.filter((r) => r.status !== "draft").length,
-    draft: myResults.filter((r) => r.status === "draft").length,
+    passed: latestResults.filter((r) => r.hasPassed).length,
+    failed: latestResults.filter((r) => !r.hasPassed && r.attemptCount < 4)
+      .length,
+    maxAttempts: latestResults.filter(
+      (r) => !r.hasPassed && r.attemptCount >= 4,
+    ).length,
+    total: latestResults.length,
   };
+
+  if (isLoading) {
+    return (
+      <div className="p-6 space-y-6">
+        <Card className="p-12 flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <span className="ml-3 text-gray-600">Loading submissions...</span>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -53,24 +89,44 @@ export default function SubmissionsPage() {
 
       {/* Summary */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {Object.entries(counts).map(([status, count]) => {
-          const cfg = statusConfig[status as ResultStatus];
-          const Icon = cfg.icon;
-          return (
-            <Card
-              key={status}
-              className="p-5 text-center rounded-[3px] border-2 border-border shadow-sm group hover:border-primary/50 transition-colors"
-            >
-              <Icon className="w-5 h-5 mx-auto mb-3 text-muted-foreground group-hover:text-primary transition-colors" />
-              <p className="text-3xl font-bold tracking-tight text-foreground">
-                {count}
-              </p>
-              <p className="text-[10px] font-bold text-muted-foreground mt-2 uppercase tracking-widest">
-                {cfg.label}
-              </p>
-            </Card>
-          );
-        })}
+        <Card className="p-5 text-center rounded-[3px] border-2 border-border shadow-sm group hover:border-success/50 transition-colors">
+          <CheckCircle className="w-5 h-5 mx-auto mb-3 text-success" />
+          <p className="text-3xl font-bold tracking-tight text-foreground">
+            {counts.passed}
+          </p>
+          <p className="text-[10px] font-bold text-muted-foreground mt-2 uppercase tracking-widest">
+            Passed
+          </p>
+        </Card>
+
+        <Card className="p-5 text-center rounded-[3px] border-2 border-border shadow-sm group hover:border-warning/50 transition-colors">
+          <XCircle className="w-5 h-5 mx-auto mb-3 text-warning" />
+          <p className="text-3xl font-bold tracking-tight text-foreground">
+            {counts.failed}
+          </p>
+          <p className="text-[10px] font-bold text-muted-foreground mt-2 uppercase tracking-widest">
+            In Progress
+          </p>
+        </Card>
+
+        <Card className="p-5 text-center rounded-[3px] border-2 border-border shadow-sm group hover:border-destructive/50 transition-colors">
+          <XCircle className="w-5 h-5 mx-auto mb-3 text-destructive" />
+          <p className="text-3xl font-bold tracking-tight text-foreground">
+            {counts.maxAttempts}
+          </p>
+          <p className="text-[10px] font-bold text-muted-foreground mt-2 uppercase tracking-widest">
+            Max Attempts
+          </p>
+        </Card>
+
+        <Card className="p-5 text-center rounded-[3px] border-2 border-primary/30 shadow-sm bg-primary/5">
+          <p className="text-3xl font-bold tracking-tight text-primary">
+            {counts.total}
+          </p>
+          <p className="text-[10px] font-bold text-muted-foreground mt-2 uppercase tracking-widest">
+            Total Students
+          </p>
+        </Card>
       </div>
 
       {/* Results Table */}
@@ -80,28 +136,22 @@ export default function SubmissionsPage() {
             All Submissions
           </h2>
         </div>
-        {myResults.length === 0 ? (
+        {latestResults.length === 0 ? (
           <div className="p-12 text-center text-gray-400">
             No submissions yet.
           </div>
         ) : (
           <div className="overflow-x-auto scrollbar-thin">
             <div className="divide-y divide-gray-50 min-w-[768px]">
-              {myResults.map((result) => {
-                const student = mockStudents.find(
-                  (s) => s.id === result.studentId,
-                );
-                const cfg = statusConfig[result.status];
-                const Icon = cfg.icon;
-                const avgScore =
-                  Object.values(result.scores).length > 0
-                    ? Math.round(
-                        Object.values(result.scores).reduce(
-                          (a, b) => a + b,
-                          0,
-                        ) / Object.values(result.scores).length,
-                      )
-                    : null;
+              {latestResults.map((result) => {
+                const isPassed = result.resultStatusId === PASS_STATUS_ID;
+                const trial =
+                  TRIAL_LETTERS[Math.min(result.attemptCount - 1, 3)];
+                const scorePercentage =
+                  result.scorePercentage?.toFixed(1) ||
+                  (result.totalScore && result.maxScore
+                    ? ((result.totalScore / result.maxScore) * 100).toFixed(1)
+                    : "N/A");
 
                 return (
                   <div
@@ -110,39 +160,57 @@ export default function SubmissionsPage() {
                   >
                     <div className="flex items-center gap-5">
                       <div className="w-12 h-12 bg-primary/10 rounded-[3px] border-2 border-primary/20 flex items-center justify-center text-primary font-bold text-sm tracking-wider uppercase">
-                        {student?.fullName
-                          .split(" ")
+                        {result.studentName
+                          ?.split(" ")
                           .map((n) => n[0])
                           .join("")
-                          .slice(0, 2)}
+                          .slice(0, 2) || "??"}
                       </div>
                       <div>
                         <p className="font-bold text-foreground text-lg group-hover:text-primary transition-colors">
-                          {student?.fullName}
+                          {result.studentName || "Unknown Student"}
                         </p>
                         <p className="text-xs font-bold text-muted-foreground tracking-wider uppercase mt-1">
-                          {student?.code}{" "}
-                          <span className="mx-1 text-border">|</span>{" "}
-                          {result.competency}
-                          {result.submittedAt &&
-                            ` | SUBMITTED ${new Date(result.submittedAt).toLocaleDateString()}`}
+                          {result.courseName || "Unknown Course"}
+                          <span className="mx-1 text-border">|</span>
+                          Trial {trial}
+                          {result.gradedAt && (
+                            <>
+                              <span className="mx-1 text-border">|</span>
+                              {new Date(result.gradedAt).toLocaleDateString()}
+                            </>
+                          )}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
-                      {avgScore !== null && (
-                        <span
-                          className={`text-xl font-bold tracking-tight ${avgScore >= 70 ? "text-success" : avgScore >= 50 ? "text-warning" : "text-destructive"}`}
-                        >
-                          {avgScore}%
-                        </span>
-                      )}
                       <span
-                        className={`flex items-center gap-1.5 text-[10px] font-bold px-2 py-1 rounded-[3px] border uppercase tracking-widest ${cfg.badge}`}
+                        className={`text-xl font-bold tracking-tight ${
+                          isPassed
+                            ? "text-success"
+                            : typeof scorePercentage === "number" &&
+                                scorePercentage >= 50
+                              ? "text-warning"
+                              : "text-destructive"
+                        }`}
                       >
-                        <Icon className="w-3 h-3" />
-                        {cfg.label}
+                        {scorePercentage}%
                       </span>
+                      <Badge
+                        className={`text-[10px] font-bold px-3 py-1 uppercase tracking-widest ${
+                          isPassed
+                            ? "bg-success/10 text-success border-success/30"
+                            : result.attemptCount >= 4
+                              ? "bg-destructive/10 text-destructive border-destructive/30"
+                              : "bg-warning/10 text-warning border-warning/30"
+                        }`}
+                      >
+                        {isPassed
+                          ? "✓ Passed"
+                          : result.attemptCount >= 4
+                            ? "✗ Failed"
+                            : "In Progress"}
+                      </Badge>
                       <Button
                         size="sm"
                         variant="outline"

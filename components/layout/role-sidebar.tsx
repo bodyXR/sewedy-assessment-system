@@ -34,6 +34,11 @@ const navByRole: Record<AccountRole, NavItem[]> = {
     },
     { label: "Students", href: "/controller/students", icon: Users },
     {
+      label: "Enroll Students",
+      href: "/controller/enroll",
+      icon: ClipboardList,
+    },
+    {
       label: "Statistics",
       href: "/controller/statistics",
       icon: ClipboardList,
@@ -86,7 +91,11 @@ export function RoleSidebar({ isOpen = true, onClose }: RoleSidebarProps) {
   }, [isOpen, onClose]);
 
   const accountRole = user?.accountRole ?? "assessor";
-  const navItems = navByRole[accountRole] ?? [];
+
+  // Use assigned role from roleContext if available (for assessors/verifiers)
+  // This determines which sidebar navigation to show
+  const effectiveRole = roleContext?.assignedRole || accountRole;
+  const navItems = navByRole[effectiveRole] ?? [];
 
   const roleLabel: Record<AccountRole, string> = {
     controller: "Controller",
@@ -148,10 +157,10 @@ export function RoleSidebar({ isOpen = true, onClose }: RoleSidebarProps) {
             <span
               className={cn(
                 "text-[10px] font-bold px-2 py-0.5 rounded-none border uppercase tracking-widest",
-                roleBadgeColor[accountRole],
+                roleBadgeColor[effectiveRole],
               )}
             >
-              {roleLabel[accountRole]}
+              {roleLabel[effectiveRole]}
             </span>
             {roleContext?.competency && (
               <span className="text-[10px] font-bold text-sidebar-foreground/60 border border-sidebar-border px-2 py-0.5 rounded-none uppercase tracking-widest truncate">

@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useRef } from "react";
-import { gsap } from "gsap";
 
 interface DotGridProps {
   dotSize?: number;
@@ -11,7 +10,6 @@ interface DotGridProps {
   proximity?: number;
   shockRadius?: number;
   shockStrength?: number;
-  resistance?: number;
   returnDuration?: number;
 }
 
@@ -20,155 +18,210 @@ interface Dot {
   y: number;
   originalX: number;
   originalY: number;
-  element: HTMLDivElement;
+  offsetX: number;
+  offsetY: number;
+  velocityX: number;
+  velocityY: number;
 }
 
 const DotGrid: React.FC<DotGridProps> = ({
-  dotSize = 5,
-  gap = 15,
-  baseColor = "#E5E7EB",
-  activeColor = "#C72E3D",
-  proximity = 120,
-  shockRadius = 250,
-  shockStrength = 5,
-  resistance = 750,
+  dotSize = 2,
+  gap = 32,
+  baseColor = "#fee2e2",
+  activeColor = "#dc2626",
+  proximity = 150,
+  shockRadius = 200,
+  shockStrength = 8,
   returnDuration = 1.5,
 }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const dotsRef = useRef<Dot[]>([]);
-  const mouseRef = useRef({ x: 0, y: 0 });
+  const mouseRef = useRef({ x: -9999, y: -9999, isActive: false });
+  const animationRef = useRef<number | undefined>(undefined);
+
+  const hexToRgb = (hex: string) => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result
+      ? {
+          r: Number.parseInt(result[1], 16),
+          g: Number.parseInt(result[2], 16),
+          b: Number.parseInt(result[3], 16),
+        }
+      : { r: 229, g: 231, b: 235 };
+  };
+
+  const baseRgb = hexToRgb(baseColor);
+  const activeRgb = hexToRgb(activeColor);
 
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-    // Clear existing dots
-    container.innerHTML = "";
-    dotsRef.current = [];
+    const ctx = canvas.getContext("2d", { alpha: true });
+    if (!ctx) return;
 
-    const rect = container.getBoundingClientRect();
-    const cols = Math.floor(rect.width / gap);
-    const rows = Math.floor(rect.height / gap);
+    const resizeCanvas = () => {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
 
-    // Create dots
-    for (let row = 0; row < rows; row++) {
-      for (let col = 0; col < cols; col++) {
-        const x = col * gap + gap / 2;
-        const y = row * gap + gap / 2;
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
 
-        const dot = document.createElement("div");
-        dot.style.position = "absolute";
-        dot.style.width = `${dotSize}px`;
-        dot.style.height = `${dotSize}px`;
-        dot.style.borderRadius = "50%";
-        dot.style.backgroundColor = baseColor;
-        dot.style.left = `${x}px`;
-        dot.style.top = `${y}px`;
-        dot.style.transform = "translate(-50%, -50%)";
-        dot.style.pointerEvents = "none";
-        dot.style.transition = "background-color 0.3s ease";
+      ctx.scale(dpr, dpr);
+      canvas.style.width = `${rect.width}px`;
+      canvas.style.height = `${rect.height}px`;
 
-        container.appendChild(dot);
+      // Recreate dots
+      dotsRef.current = [];
+      const cols = Math.floor(rect.width / gap);
+      const rows = Math.floor(rect.height / gap);
 
-        dotsRef.current.push({
-          x,
-          y,
-          originalX: x,
-          originalY: y,
-          element: dot,
-        });
+      for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+          const x = col * gap + gap / 2;
+          const y = row * gap + gap / 2;
+
+          dotsRef.current.push({
+            x,
+            y,
+            originalX: x,
+            originalY: y,
+            offsetX: 0,
+            offsetY: 0,
+            velocityX: 0,
+            velocityY: 0,
+          });
+        }
       }
-    }
+    };
 
-    // Mouse move handler
-    const handleMouseMove = (e: MouseEvent) => {
-      const rect = container.getBoundingClientRect();
-      mouseRef.current = {
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top,
-      };
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas);
+
+    // Animation loop
+    const animate = () => {
+      const rect = canvas.getBoundingClientRect();
+      ctx.clearRect(0, 0, rect.width, rect.height);
+
+      const returnSpeed = 0.1;
+      const damping = 0.85;
 
       dotsRef.current.forEach((dot) => {
         const dx = mouseRef.current.x - dot.x;
         const dy = mouseRef.current.y - dot.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
+        const distance = Math.hypot(dx, dy);
 
-        // Color change based on proximity
-        if (distance < proximity) {
-          const intensity = 1 - distance / proximity;
-          dot.element.style.backgroundColor = activeColor;
-          dot.element.style.opacity = String(0.3 + intensity * 0.7);
-        } else {
-          dot.element.style.backgroundColor = baseColor;
-          dot.element.style.opacity = "1";
-        }
-
-        // Shock wave displacement
-        if (distance < shockRadius) {
+        // Apply shock wave effect
+        if (mouseRef.current.isActive && distance < shockRadius) {
           const angle = Math.atan2(dy, dx);
           const force = (1 - distance / shockRadius) * shockStrength;
 
-          const offsetX = Math.cos(angle) * force;
-          const offsetY = Math.sin(angle) * force;
-
-          gsap.to(dot.element, {
-            x: offsetX,
-            y: offsetY,
-            duration: 0.3,
-            ease: "power2.out",
-          });
-        } else {
-          // Return to original position
-          gsap.to(dot.element, {
-            x: 0,
-            y: 0,
-            duration: returnDuration,
-            ease: "elastic.out(1, 0.3)",
-          });
+          dot.velocityX += Math.cos(angle) * force * 0.5;
+          dot.velocityY += Math.sin(angle) * force * 0.5;
         }
+
+        // Return to original position with spring physics
+        dot.velocityX += (0 - dot.offsetX) * returnSpeed;
+        dot.velocityY += (0 - dot.offsetY) * returnSpeed;
+
+        // Apply damping
+        dot.velocityX *= damping;
+        dot.velocityY *= damping;
+
+        // Update position
+        dot.offsetX += dot.velocityX;
+        dot.offsetY += dot.velocityY;
+
+        // Calculate color based on proximity
+        let color = `rgb(${baseRgb.r}, ${baseRgb.g}, ${baseRgb.b})`;
+        let opacity = 0.4;
+
+        if (mouseRef.current.isActive && distance < proximity) {
+          const intensity = 1 - distance / proximity;
+          const r = Math.round(
+            baseRgb.r + (activeRgb.r - baseRgb.r) * intensity,
+          );
+          const g = Math.round(
+            baseRgb.g + (activeRgb.g - baseRgb.g) * intensity,
+          );
+          const b = Math.round(
+            baseRgb.b + (activeRgb.b - baseRgb.b) * intensity,
+          );
+          color = `rgb(${r}, ${g}, ${b})`;
+          opacity = 0.4 + intensity * 0.6;
+        }
+
+        // Draw dot
+        ctx.fillStyle = color;
+        ctx.globalAlpha = opacity;
+        ctx.beginPath();
+        ctx.arc(
+          dot.x + dot.offsetX,
+          dot.y + dot.offsetY,
+          dotSize,
+          0,
+          Math.PI * 2,
+        );
+        ctx.fill();
       });
+
+      ctx.globalAlpha = 1;
+      animationRef.current = requestAnimationFrame(animate);
     };
 
-    // Mouse leave handler
+    animate();
+
+    // Mouse event handlers
+    const handleMouseMove = (e: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      mouseRef.current = {
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+        isActive: true,
+      };
+    };
+
     const handleMouseLeave = () => {
-      dotsRef.current.forEach((dot) => {
-        dot.element.style.backgroundColor = baseColor;
-        dot.element.style.opacity = "1";
-        gsap.to(dot.element, {
-          x: 0,
-          y: 0,
-          duration: returnDuration,
-          ease: "elastic.out(1, 0.3)",
-        });
-      });
+      mouseRef.current.isActive = false;
+      mouseRef.current.x = -9999;
+      mouseRef.current.y = -9999;
     };
 
-    container.addEventListener("mousemove", handleMouseMove);
-    container.addEventListener("mouseleave", handleMouseLeave);
+    canvas.addEventListener("mousemove", handleMouseMove);
+    canvas.addEventListener("mouseleave", handleMouseLeave);
 
     return () => {
-      container.removeEventListener("mousemove", handleMouseMove);
-      container.removeEventListener("mouseleave", handleMouseLeave);
+      window.removeEventListener("resize", resizeCanvas);
+      canvas.removeEventListener("mousemove", handleMouseMove);
+      canvas.removeEventListener("mouseleave", handleMouseLeave);
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
     };
   }, [
     dotSize,
     gap,
-    baseColor,
-    activeColor,
     proximity,
     shockRadius,
     shockStrength,
-    resistance,
     returnDuration,
+    baseRgb.r,
+    baseRgb.g,
+    baseRgb.b,
+    activeRgb.r,
+    activeRgb.g,
+    activeRgb.b,
   ]);
 
   return (
-    <div
-      ref={containerRef}
+    <canvas
+      ref={canvasRef}
       style={{
         position: "absolute",
         inset: 0,
-        overflow: "hidden",
+        width: "100%",
+        height: "100%",
+        pointerEvents: "none",
       }}
     />
   );

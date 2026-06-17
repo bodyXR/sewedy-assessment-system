@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Navigation } from "@/components/landing/navigation";
 
 export default function LoginPage() {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
@@ -22,7 +22,7 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!username || !password) {
+    if (!email || !password) {
       toast({
         title: "Error",
         description: "Please fill in all fields",
@@ -33,7 +33,7 @@ export default function LoginPage() {
 
     setIsLoading(true);
     try {
-      await login(username, password);
+      await login(email, password);
 
       toast({
         title: "Success",
@@ -107,17 +107,17 @@ export default function LoginPage() {
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="space-y-2">
                 <label
-                  htmlFor="username"
+                  htmlFor="email"
                   className="block text-sm font-semibold text-foreground"
                 >
-                  Username
+                  Email
                 </label>
                 <Input
-                  id="username"
-                  type="text"
-                  placeholder="Enter your username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  id="email"
+                  type="email"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   disabled={isLoading}
                   className="h-11 bg-background/50 border-border/50 focus:border-primary transition-colors"
                 />
@@ -157,28 +157,14 @@ export default function LoginPage() {
               </Button>
             </form>
 
-            {/* Demo Credentials Info */}
+            {/* API Info */}
             <div className="mt-8 p-4 bg-gradient-to-r from-secondary to-muted rounded-xl border border-border/50">
-              <p className="text-xs font-semibold text-muted-foreground mb-3 uppercase tracking-wide">
-                Demo Credentials (password: demo123)
+              <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
+                Connected to Backend API
               </p>
-              <div className="space-y-1.5">
-                {[
-                  { username: "controller", role: "Controller" },
-                  { username: "assessor1", role: "Assessor" },
-                  { username: "verifier1", role: "Verifier" },
-                ].map(({ username, role }) => (
-                  <div
-                    key={username}
-                    className="flex items-center justify-between text-sm"
-                  >
-                    <span className="text-muted-foreground">{role}</span>
-                    <span className="font-mono font-semibold text-foreground bg-background/50 px-3 py-1 rounded-md">
-                      {username}
-                    </span>
-                  </div>
-                ))}
-              </div>
+              <p className="text-xs text-muted-foreground">
+                Use your registered email and password to sign in
+              </p>
             </div>
           </div>
         </Card>

@@ -29,16 +29,43 @@ export function RoleRouter({ children }: RoleRouterProps) {
       return;
     }
 
-    const accountRole = user.accountRole;
-    const allowedPrefix = ROLE_PREFIXES[accountRole];
+    console.log("🎯 RoleRouter - user:", user);
+    console.log("🎯 RoleRouter - roleContext:", roleContext);
 
-    // If user is on a path not belonging to their role, redirect
-    if (allowedPrefix && !pathname.startsWith(allowedPrefix)) {
-      if (accountRole === "controller") router.push("/controller/dashboard");
-      else if (accountRole === "assessor") router.push("/assessor/students");
-      else if (accountRole === "verifier") router.push("/verifier/results");
+    const accountRole = user.accountRole;
+
+    // For controller, always allow controller routes
+    if (accountRole === "controller") {
+      if (!pathname.startsWith("/controller")) {
+        router.push("/controller/dashboard");
+      }
+      return;
     }
-  }, [user, isLoading, isRoleLoading, pathname, router]);
+
+    // For assessors and verifiers, check their assigned role from roleContext
+    if (roleContext && roleContext.assignedRole) {
+      const assignedRole = roleContext.assignedRole;
+
+      console.log(
+        "Role Router - assigned role:",
+        assignedRole,
+        "current path:",
+        pathname,
+      );
+
+      // Redirect to the correct dashboard based on assigned role
+      if (assignedRole === "assessor" && !pathname.startsWith("/assessor")) {
+        router.push("/assessor/students");
+      } else if (
+        assignedRole === "verifier" &&
+        !pathname.startsWith("/verifier")
+      ) {
+        router.push("/verifier/results");
+      }
+    } else {
+      console.warn("⚠️ RoleRouter - No roleContext or assignedRole found");
+    }
+  }, [user, isLoading, isRoleLoading, roleContext, pathname, router]);
 
   if (isLoading || isRoleLoading) {
     return (

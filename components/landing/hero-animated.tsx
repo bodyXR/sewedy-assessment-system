@@ -49,10 +49,10 @@ export function HeroAnimated() {
         <div className="flex flex-col sm:flex-row gap-3 justify-center mb-16">
           <Button
             size="lg"
-            onClick={() => router.push("/dashboard")}
+            onClick={() => router.push("/login")}
             className="group px-8"
           >
-            Get Started
+            Sign In
             <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
           </Button>
           <Button

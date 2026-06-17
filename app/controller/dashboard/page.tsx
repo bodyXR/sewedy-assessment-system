@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { Users, CheckCircle, TrendingUp } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Users, CheckCircle, BookOpen, Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import {
   Select,
@@ -10,40 +10,34 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  mockStudents,
-  mockResults,
-  mockRoleAssignments,
-  mockCycles,
-  mockUsers,
-} from "@/lib/mock-data";
+import { useCourses, useCourseRounds } from "@/hooks/use-api";
 
-const COMPETENCIES = [
-  "All",
-  "Structural",
-  "Civil",
-  "Electrical",
-  "Mechanical",
-  "Software",
-];
-const CLASSES = ["All", "Junior", "Wheeler", "Senior"];
+const API_BASE_URL = "http://sewedyassessmentsys.runasp.net/api";
+
+function getAuthToken(): string | null {
+  if (typeof window === "undefined") return null;
+  const user = localStorage.getItem("user");
+  if (!user) return null;
+  try {
+    const parsed = JSON.parse(user);
+    return parsed.token || null;
+  } catch {
+    return null;
+  }
+}
 
 function StatCard({
   label,
   value,
   icon: Icon,
-  color,
 }: {
   label: string;
   value: string | number;
   icon: React.ElementType;
-  color: string;
 }) {
   return (
     <Card className="p-5 rounded-[3px] border-2 border-border shadow-sm text-center group hover:border-primary/50 transition-colors">
-      <Icon
-        className={`w-5 h-5 mx-auto mb-3 text-muted-foreground group-hover:text-primary transition-colors`}
-      />
+      <Icon className="w-5 h-5 mx-auto mb-3 text-muted-foreground group-hover:text-primary transition-colors" />
       <p className="text-3xl font-bold tracking-tight text-foreground">
         {value}
       </p>
@@ -55,82 +49,90 @@ function StatCard({
 }
 
 export default function ControllerDashboard() {
-  const [filterCycle, setFilterCycle] = useState("active");
-  const [filterCompetency, setFilterCompetency] = useState("All");
-  const [filterClass, setFilterClass] = useState("All");
+  const [filterCourseId, setFilterCourseId] = useState<number | null>(null);
+  const [filterRoundId, setFilterRoundId] = useState<number | null>(null);
+  const [dashboardData, setDashboardData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  const selectedCycle = useMemo(() => {
-    if (filterCycle === "active")
-      return mockCycles.find((c) => c.status === "active");
-    return mockCycles.find((c) => c.id === filterCycle);
-  }, [filterCycle]);
+  const { data: courses } = useCourses();
+  const { data: courseRounds } = useCourseRounds();
 
-  const stats = useMemo(() => {
-    // Filter students by class + competency
-    const filteredStudents = mockStudents.filter((s) => {
-      if (filterCompetency !== "All" && s.competency !== filterCompetency)
-        return false;
-      if (filterClass !== "All" && s.gradeLevel !== filterClass) return false;
-      return true;
-    });
+  const activeCycle =
+    courseRounds?.find((c) => c.statusId === 1) || courseRounds?.[0];
 
-    const cycleResults = mockResults.filter((r) => {
-      if (r.cycleId !== selectedCycle?.id) return false;
-      const student = mockStudents.find((s) => s.id === r.studentId);
-      if (filterCompetency !== "All" && r.competency !== filterCompetency)
-        return false;
-      if (filterClass !== "All" && student?.gradeLevel !== filterClass)
-        return false;
-      return true;
-    });
+  useEffect(() => {
+    if (activeCycle && !filterRoundId) {
+      setFilterRoundId(activeCycle.id);
+    }
+  }, [activeCycle, filterRoundId]);
 
-    const submitted = cycleResults.filter((r) => r.status !== "draft").length;
-    const total = filteredStudents.length;
-    const completion = total > 0 ? Math.round((submitted / total) * 100) : 0;
+  useEffect(() => {
+    const fetchDashboard = async () => {
+      try {
+        setLoading(true);
+        const params = new URLSearchParams();
+        if (filterRoundId)
+          params.append("courseRoundId", filterRoundId.toString());
+        if (filterCourseId)
+          params.append("courseId", filterCourseId.toString());
 
-    // Per-competency
-    const compList =
-      filterCompetency !== "All" ? [filterCompetency] : COMPETENCIES.slice(1);
-    const competencyStats = compList
-      .map((comp) => {
-        const compStudents = filteredStudents.filter(
-          (s) => s.competency === comp,
-        ).length;
-        const compSubmitted = cycleResults.filter(
-          (r) => r.competency === comp && r.status !== "draft",
-        ).length;
-        return { comp, compStudents, compSubmitted };
-      })
-      .filter((c) => c.compStudents > 0);
+        const token = getAuthToken();
+        const headers: Record<string, string> = {
+          "Content-Type": "application/json",
+        };
+        if (token) {
+          headers["Authorization"] = `Bearer ${token}`;
+        }
 
-    // Assessor progress
-    const assessors = mockRoleAssignments.filter((ra) => {
-      if (ra.cycleId !== selectedCycle?.id || ra.assignedRole !== "assessor")
-        return false;
-      if (filterCompetency !== "All" && ra.competency !== filterCompetency)
-        return false;
-      if (filterClass !== "All" && ra.grade !== filterClass) return false;
-      return true;
-    });
-    const assessorProgress = assessors.map((ra) => {
-      const assessorUser = mockUsers.find((u) => u.id === ra.userId);
-      const assessorResults = cycleResults.filter(
-        (r) => r.assessorId === ra.userId,
-      );
-      const assessorStudents = filteredStudents.filter(
-        (s) => s.competency === ra.competency && s.gradeLevel === ra.grade,
-      );
-      return {
-        name: assessorUser?.fullName ?? ra.userId,
-        competency: ra.competency,
-        classGroup: ra.classGroup,
-        submitted: assessorResults.filter((r) => r.status !== "draft").length,
-        total: assessorStudents.length,
-      };
-    });
+        const url = `${API_BASE_URL}/Dashboard?${params.toString()}`;
+        const response = await fetch(url, {
+          headers,
+          mode: "cors",
+        });
 
-    return { submitted, total, completion, competencyStats, assessorProgress };
-  }, [selectedCycle, filterCompetency, filterClass]);
+        if (!response.ok) {
+          throw new Error("Failed to fetch dashboard");
+        }
+
+        const data = await response.json();
+        setDashboardData(data);
+      } catch (error) {
+        console.error("Failed to fetch dashboard:", error);
+        setDashboardData(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (filterRoundId) {
+      fetchDashboard();
+    } else {
+      setLoading(false);
+    }
+  }, [filterRoundId, filterCourseId]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
+        <Card className="p-12 flex items-center gap-3">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <span className="text-gray-600">Loading dashboard...</span>
+        </Card>
+      </div>
+    );
+  }
+
+  const summary = dashboardData?.summary || {
+    totalStudents: 0,
+    resultsSubmitted: 0,
+    cycleCompletionPercent: 0,
+  };
+  const assessorProgress = dashboardData?.assessorProgress || [];
+  const submissionsByCompetency = dashboardData?.submissionsByCompetency || [];
+  const overallCompletion = dashboardData?.overallCompletion || {
+    totalStudents: 0,
+    assessedStudents: 0,
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-6 space-y-6">
@@ -140,53 +142,45 @@ export default function ControllerDashboard() {
           Controller Dashboard
         </h1>
         <p className="text-primary-foreground/80 text-sm font-medium tracking-wide">
-          {selectedCycle
-            ? selectedCycle.name.toUpperCase()
-            : "NO CYCLE SELECTED"}
+          {activeCycle
+            ? `ROUND ${activeCycle.roundNumber} - ${activeCycle.statusId === 1 ? "ACTIVE" : "INACTIVE"}`
+            : "NO CYCLE AVAILABLE"}
         </p>
       </div>
 
       {/* Filters */}
       <Card className="p-5 rounded-[3px] border-2 border-border shadow-sm">
         <div className="flex flex-wrap gap-3">
-          {/* Cycle */}
-          <Select value={filterCycle} onValueChange={setFilterCycle}>
-            <SelectTrigger className="w-52 h-9 text-xs">
-              <SelectValue placeholder="Select cycle" />
+          <Select
+            value={filterRoundId?.toString() || ""}
+            onValueChange={(v) => setFilterRoundId(v ? Number(v) : null)}
+          >
+            <SelectTrigger className="w-40 h-9 text-xs">
+              <SelectValue placeholder="Select Round" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="active">Active Cycle</SelectItem>
-              {mockCycles.map((c) => (
-                <SelectItem key={c.id} value={c.id}>
-                  {c.name}
+              {courseRounds?.map((round) => (
+                <SelectItem key={round.id} value={round.id.toString()}>
+                  Round {round.roundNumber}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
 
-          {/* Competency */}
-          <Select value={filterCompetency} onValueChange={setFilterCompetency}>
+          <Select
+            value={filterCourseId?.toString() || "All"}
+            onValueChange={(v) =>
+              setFilterCourseId(v === "All" ? null : Number(v))
+            }
+          >
             <SelectTrigger className="w-40 h-9 text-xs">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {COMPETENCIES.map((c) => (
-                <SelectItem key={c} value={c}>
-                  {c === "All" ? "All Competencies" : c}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {/* Class */}
-          <Select value={filterClass} onValueChange={setFilterClass}>
-            <SelectTrigger className="w-36 h-9 text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {CLASSES.map((c) => (
-                <SelectItem key={c} value={c}>
-                  {c === "All" ? "All Classes" : c}
+              <SelectItem value="All">All Competencies</SelectItem>
+              {courses?.map((c) => (
+                <SelectItem key={c.id} value={c.id.toString()}>
+                  {c.title}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -198,21 +192,18 @@ export default function ControllerDashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
         <StatCard
           label="Total Students"
-          value={stats.total}
+          value={summary.totalStudents}
           icon={Users}
-          color="text-blue-600"
         />
         <StatCard
-          label="Results Submitted"
-          value={stats.submitted}
-          icon={TrendingUp}
-          color="text-purple-600"
-        />
-        <StatCard
-          label="Cycle Completion"
-          value={`${stats.completion}%`}
+          label="Assessed Students"
+          value={summary.resultsSubmitted}
           icon={CheckCircle}
-          color="text-green-600"
+        />
+        <StatCard
+          label="Completion Rate"
+          value={`${summary.cycleCompletionPercent}%`}
+          icon={BookOpen}
         />
       </div>
 
@@ -223,31 +214,34 @@ export default function ControllerDashboard() {
             Assessor Progress
           </h2>
           <div className="space-y-4">
-            {stats.assessorProgress.map((ap, i) => (
-              <div key={i}>
-                <div className="flex items-center justify-between text-sm mb-1">
-                  <span className="font-medium text-gray-700">{ap.name}</span>
-                  <span className="text-gray-500">
-                    {ap.competency} · {ap.classGroup} · {ap.submitted}/
-                    {ap.total}
-                  </span>
-                </div>
-                <div className="w-full bg-gray-100 rounded-full h-2">
-                  <div
-                    className="bg-gradient-to-r from-red-400 to-red-500 h-2 rounded-full transition-all"
-                    style={{
-                      width:
-                        ap.total > 0
-                          ? `${(ap.submitted / ap.total) * 100}%`
-                          : "0%",
-                    }}
-                  />
-                </div>
-              </div>
-            ))}
-            {stats.assessorProgress.length === 0 && (
+            {assessorProgress.length > 0 ? (
+              assessorProgress.map((ap: any, i: number) => {
+                const percent =
+                  ap.total > 0
+                    ? Math.round((ap.submitted / ap.total) * 100)
+                    : 0;
+                return (
+                  <div key={i}>
+                    <div className="flex items-center justify-between text-sm mb-1">
+                      <span className="font-medium text-gray-700">
+                        {ap.assessorName}
+                      </span>
+                      <span className="text-gray-500">
+                        {ap.competencyName} · {ap.submitted}/{ap.total}
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-100 rounded-full h-2">
+                      <div
+                        className="bg-gradient-to-r from-red-400 to-red-500 h-2 rounded-full transition-all"
+                        style={{ width: `${percent}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
               <p className="text-sm text-gray-400 text-center py-4">
-                No assessors match the current filters
+                No assessment data available yet
               </p>
             )}
           </div>
@@ -256,38 +250,40 @@ export default function ControllerDashboard() {
         {/* Submissions by Competency */}
         <Card className="p-6 rounded-[3px] border-2 border-border shadow-sm">
           <h2 className="text-sm font-bold text-foreground mb-4 uppercase tracking-widest">
-            Submissions by Competency
+            Assessment by Competency
           </h2>
           <div className="space-y-3">
-            {stats.competencyStats.map((cs) => (
-              <div
-                key={cs.comp}
-                className="flex items-center justify-between text-sm py-1"
-              >
-                <span className="text-gray-700 font-medium w-28 shrink-0">
-                  {cs.comp}
-                </span>
-                <div className="flex items-center gap-3 flex-1">
-                  <div className="flex-1 bg-gray-100 rounded-full h-2">
-                    <div
-                      className="bg-gradient-to-r from-red-400 to-red-500 h-2 rounded-full transition-all"
-                      style={{
-                        width:
-                          cs.compStudents > 0
-                            ? `${(cs.compSubmitted / cs.compStudents) * 100}%`
-                            : "0%",
-                      }}
-                    />
+            {submissionsByCompetency.length > 0 ? (
+              submissionsByCompetency.map((cs: any, i: number) => {
+                const percent =
+                  cs.total > 0
+                    ? Math.round((cs.submitted / cs.total) * 100)
+                    : 0;
+                return (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between text-sm py-1"
+                  >
+                    <span className="text-gray-700 font-medium w-32 shrink-0 truncate">
+                      {cs.competencyName}
+                    </span>
+                    <div className="flex items-center gap-3 flex-1">
+                      <div className="flex-1 bg-gray-100 rounded-full h-2">
+                        <div
+                          className="bg-gradient-to-r from-red-400 to-red-500 h-2 rounded-full transition-all"
+                          style={{ width: `${percent}%` }}
+                        />
+                      </div>
+                      <span className="text-gray-400 text-xs w-14 text-right">
+                        {cs.submitted}/{cs.total}
+                      </span>
+                    </div>
                   </div>
-                  <span className="text-gray-400 text-xs w-14 text-right">
-                    {cs.compSubmitted}/{cs.compStudents}
-                  </span>
-                </div>
-              </div>
-            ))}
-            {stats.competencyStats.length === 0 && (
+                );
+              })
+            ) : (
               <p className="text-sm text-gray-400 text-center py-4">
-                No data yet
+                No assessment data available yet
               </p>
             )}
           </div>
@@ -298,20 +294,21 @@ export default function ControllerDashboard() {
       <Card className="p-6 rounded-[3px] border-2 border-border shadow-sm">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-bold text-foreground uppercase tracking-widest">
-            Overall Completion
+            Overall Assessment Progress
           </h2>
           <span className="text-2xl font-bold text-primary tracking-tight">
-            {stats.completion}%
+            {summary.cycleCompletionPercent}%
           </span>
         </div>
         <div className="w-full bg-gray-100 rounded-full h-4">
           <div
             className="bg-gradient-to-r from-red-400 to-red-600 h-4 rounded-full transition-all duration-500"
-            style={{ width: `${stats.completion}%` }}
+            style={{ width: `${summary.cycleCompletionPercent}%` }}
           />
         </div>
         <p className="text-xs text-gray-400 mt-2">
-          {stats.submitted} of {stats.total} students assessed
+          {overallCompletion.assessedStudents} of{" "}
+          {overallCompletion.totalStudents} students have been assessed
         </p>
       </Card>
     </div>

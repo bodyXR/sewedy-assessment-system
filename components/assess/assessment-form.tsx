@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Save, Send, Lock, Zap, ChevronDown, ChevronUp } from "lucide-react";
+import { Send, Lock, Zap, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -35,6 +35,7 @@ function taskTotal(task: Task, scores: TaskScores): number {
 export interface AssessmentFormProps {
   student: Student;
   competency: Competency | null;
+  tasks?: Task[]; // Allow external tasks to be passed in
   currentTrial?: Grade;
   initialScores?: TaskScores;
   initialNotes?: string;
@@ -55,6 +56,7 @@ export interface AssessmentFormData {
 
 export function AssessmentForm({
   student,
+  tasks: externalTasks,
   currentTrial = "A" as Grade,
   initialScores = {},
   initialNotes = "",
@@ -66,7 +68,15 @@ export function AssessmentForm({
   onCancel,
 }: AssessmentFormProps) {
   const { toast } = useToast();
-  const tasks: Task[] = mockTasks[student.competency ?? ""] ?? [];
+  // Use external tasks if provided, otherwise fall back to mock tasks
+  const tasks: Task[] =
+    externalTasks || mockTasks[student.competency ?? ""] || [];
+
+  console.log("=== ASSESSMENT FORM INITIALIZED ===");
+  console.log("Student competency:", student.competency);
+  console.log("External tasks provided:", externalTasks);
+  console.log("Final tasks being used:", tasks);
+  console.log("Number of tasks:", tasks.length);
 
   const [scores, setScores] = useState<TaskScores>(initialScores);
   const [notes, setNotes] = useState(initialNotes);
@@ -118,18 +128,6 @@ export function AssessmentForm({
     grade: derivedGrade,
     trial: currentTrial,
   });
-
-  const handleSaveDraft = () => {
-    setIsSaving(true);
-    setTimeout(() => {
-      setIsSaving(false);
-      onSaveDraft?.(buildData());
-      toast({
-        title: "Draft saved",
-        description: "Your draft has been saved.",
-      });
-    }, 400);
-  };
 
   const handleSubmit = () => {
     if (!allTasksEntered) {
@@ -386,25 +384,14 @@ export function AssessmentForm({
           className={`flex gap-4 mt-6 ${mode === "sheet" ? "pt-4 border-t-2 border-border" : ""}`}
         >
           {mode === "page" ? (
-            <>
-              <Button
-                variant="outline"
-                onClick={handleSaveDraft}
-                disabled={isSaving}
-                className="flex-1 py-6 text-sm"
-              >
-                <Save className="w-4 h-4 mr-2" />
-                Save Draft
-              </Button>
-              <Button
-                onClick={handleSubmit}
-                disabled={isSaving}
-                className="flex-[2] py-6 text-sm"
-              >
-                <Send className="w-4 h-4 mr-2" />
-                Submit Results
-              </Button>
-            </>
+            <Button
+              onClick={handleSubmit}
+              disabled={isSaving}
+              className="w-full py-6 text-sm"
+            >
+              <Send className="w-4 h-4 mr-2" />
+              Submit Results
+            </Button>
           ) : (
             <>
               {onCancel && (

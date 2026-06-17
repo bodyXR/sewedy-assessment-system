@@ -5,62 +5,49 @@ import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Users, Search } from "lucide-react";
-import { mockStudents, mockCompetencies, mockResults } from "@/lib/mock-data";
+import { Users, Search, Loader2 } from "lucide-react";
 import { useAuth, useCurrentRole } from "@/lib/auth-context";
-
-import type { Grade } from "@/lib/types";
+import { useStudentsByAssessor } from "@/hooks/use-api";
 
 export default function AssessorStudentsPage() {
   const router = useRouter();
   const { user } = useAuth();
   const roleCtx = useCurrentRole();
 
-  const myStudents = useMemo(
-    () =>
-      mockStudents.filter(
-        (s) =>
-          s.competency === roleCtx?.competency &&
-          s.gradeLevel === roleCtx?.grade,
-      ),
-    [roleCtx],
-  );
-
-  const competencyData = useMemo(
-    () =>
-      mockCompetencies.find((c) => c.name.includes(roleCtx?.competency ?? "")),
-    [roleCtx],
-  );
+  const assessorId = user?.accountId || null;
+  const {
+    data: students,
+    isLoading,
+    error,
+  } = useStudentsByAssessor(assessorId);
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [currentTrial, setCurrentTrial] = useState<Grade>("A");
 
   const filteredStudents = useMemo(() => {
-    if (!searchQuery.trim()) return myStudents;
+    if (!students) return [];
+    if (!searchQuery.trim()) return students;
     const q = searchQuery.toLowerCase();
-    return myStudents.filter(
+    return students.filter(
       (s) =>
-        s.fullName.toLowerCase().includes(q) ||
-        s.code.toLowerCase().includes(q),
+        s.fullNameEn.toLowerCase().includes(q) ||
+        s.fullNameAr.toLowerCase().includes(q) ||
+        s.email.toLowerCase().includes(q) ||
+        s.nationalId.includes(q),
     );
-  }, [myStudents, searchQuery]);
+  }, [students, searchQuery]);
 
-  const getResult = (studentId: string) =>
-    mockResults.find(
-      (r) => r.studentId === studentId && r.assessorId === user?.id,
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6">
+        <Card className="p-8 text-center">
+          <p className="text-red-600 font-semibold mb-2">
+            Error loading students
+          </p>
+          <p className="text-sm text-gray-600">{error.message}</p>
+        </Card>
+      </div>
     );
-
-  const assessedCount = myStudents.filter((s) => {
-    const r = getResult(s.id);
-    return r && r.status !== "draft";
-  }).length;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -70,7 +57,7 @@ export default function AssessorStudentsPage() {
           Students
         </h1>
         <p className="text-primary-foreground/80 text-sm mb-4 font-medium">
-          {roleCtx?.cycleName}
+          {roleCtx?.cycleName || "Assessment Cycle"}
         </p>
         <div className="flex items-center gap-3 flex-wrap">
           {roleCtx?.competency && (
@@ -91,9 +78,9 @@ export default function AssessorStudentsPage() {
         </div>
       </div>
 
-      {/* Search + Trial */}
+      {/* Search */}
       <Card className="p-5 mb-6">
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex flex-col gap-4">
           <div className="flex-1">
             <div className="text-sm font-medium text-gray-700 mb-2">
               Search Students
@@ -101,41 +88,23 @@ export default function AssessorStudentsPage() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
               <Input
-                placeholder="Search by name or code..."
+                placeholder="Search by name, email, or national ID..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9"
+                disabled={isLoading}
               />
             </div>
-          </div>
-          <div className="w-40">
-            <div className="text-sm font-medium text-gray-700 mb-2">
-              Current Trial
-            </div>
-            <Select
-              value={currentTrial}
-              onValueChange={(v) => setCurrentTrial(v as Grade)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="A">Trial A</SelectItem>
-                <SelectItem value="B">Trial B</SelectItem>
-                <SelectItem value="C">Trial C</SelectItem>
-                <SelectItem value="D">Trial D</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
         </div>
 
         <div className="mt-6 bg-secondary/50 border-l-4 border-l-primary rounded-[3px] p-5 flex items-center justify-between">
           <div>
             <p className="font-bold text-foreground text-sm uppercase tracking-wide">
-              {competencyData?.name ?? roleCtx?.competency}
+              {roleCtx?.competency || "Competency"}
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              {competencyData?.description}
+              Students assigned to you for assessment
             </p>
           </div>
           <Badge
@@ -143,7 +112,7 @@ export default function AssessorStudentsPage() {
             className="text-sm px-4 py-2 font-bold bg-background rounded-[3px] border-border"
           >
             <Users className="w-4 h-4 mr-2 text-primary" />
-            {myStudents.length} Students
+            {students?.length || 0} Students
           </Badge>
         </div>
       </Card>
@@ -151,13 +120,18 @@ export default function AssessorStudentsPage() {
       {/* Progress */}
       <div className="mb-4 flex items-center justify-between">
         <p className="text-base font-semibold text-gray-900">
-          Students ({assessedCount}/{filteredStudents.length} assessed)
+          Students ({filteredStudents.length} total)
         </p>
         <p className="text-sm text-gray-500">Click any card to assess</p>
       </div>
 
       {/* Student Grid */}
-      {myStudents.length === 0 ? (
+      {isLoading ? (
+        <Card className="p-12 flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <span className="ml-3 text-gray-600">Loading students...</span>
+        </Card>
+      ) : !students || students.length === 0 ? (
         <Card className="p-12 text-center">
           <Users className="w-14 h-14 text-gray-300 mx-auto mb-4" />
           <p className="text-gray-500">
@@ -167,8 +141,8 @@ export default function AssessorStudentsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredStudents.map((student) => {
-            const result = getResult(student.id);
-            const isAssessed = result && result.status !== "draft";
+            const isAssessed =
+              student.status === "Passed" || student.status === "Not Passed";
 
             return (
               <Card
@@ -183,11 +157,17 @@ export default function AssessorStudentsPage() {
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <p className="font-bold text-foreground text-lg group-hover:text-primary transition-colors">
-                      {student.fullName}
+                      {student.fullNameEn}
                     </p>
                     <p className="text-sm text-muted-foreground font-medium mt-1">
-                      {student.code} <span className="mx-1 text-border">|</span>{" "}
-                      {student.gradeLevel}
+                      {student.email}
+                      {student.className && (
+                        <>
+                          {" "}
+                          <span className="mx-1 text-border">|</span>{" "}
+                          {student.className}
+                        </>
+                      )}
                     </p>
                   </div>
                   {isAssessed && (

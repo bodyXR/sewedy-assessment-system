@@ -31,7 +31,7 @@ export function PendingAssignmentScreen() {
           You haven't been assigned a role for the current assessment cycle yet.
           Please contact your Controller to get assigned.
         </p>
-        <Button variant="outline" onClick={handleLogout} className="gap-2">
+        <Button variant="default" onClick={handleLogout} className="gap-2">
           <LogOut className="w-4 h-4" />
           Sign Out
         </Button>

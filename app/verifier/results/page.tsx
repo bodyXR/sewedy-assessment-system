@@ -2,10 +2,10 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, Search } from "lucide-react";
+import { Search, Loader2, AlertCircle, Users, Eye } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -13,70 +13,104 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  mockResults,
-  mockStudents,
-  mockUsers,
-  mockCycles,
-} from "@/lib/mock-data";
-import type { ResultStatus } from "@/lib/types";
-
-const statusBadge: Record<ResultStatus, string> = {
-  draft: "bg-gray-100 text-gray-600",
-  submitted: "bg-amber-100 text-amber-700",
-  approved: "bg-green-100 text-green-700",
-};
-
-const COMPETENCIES = [
-  "All",
-  "Structural",
-  "Civil",
-  "Electrical",
-  "Mechanical",
-  "Software",
-];
-const CLASSES = ["All", "Junior", "Wheeler", "Senior", "Lead"];
+import { useApiQuery } from "@/hooks/use-api";
+import { api } from "@/lib/api-client";
+import { useCurrentRole } from "@/lib/auth-context";
 
 export default function VerifierResultsPage() {
   const router = useRouter();
-  const activeCycle = mockCycles.find((c) => c.status === "active");
+  const roleCtx = useCurrentRole();
 
-  const [filterCompetency, setFilterCompetency] = useState("All");
-  const [filterClass, setFilterClass] = useState("All");
   const [filterStatus, setFilterStatus] = useState("All");
+  const [filterAssessor, setFilterAssessor] = useState("All");
   const [search, setSearch] = useState("");
 
-  // Verifier sees ALL submitted/approved results across all competencies
-  const allResults = useMemo(() => {
-    return mockResults.filter((r) => r.status !== "draft");
-  }, []);
+  // Fetch competency results for the current cycle
+  const {
+    data: results,
+    isLoading,
+    error,
+  } = useApiQuery(
+    () =>
+      roleCtx?.cycleId
+        ? api.competencyResults.getAll({
+            courseRoundId: Number(roleCtx.cycleId),
+          })
+        : Promise.resolve([]),
+    [roleCtx?.cycleId],
+  );
 
+  // Get unique assessors for filter
+  const assessors = useMemo(() => {
+    if (!results) return [];
+    const uniqueAssessors = new Map<number, string>();
+    results.forEach((r) => {
+      if (r.assessorId && r.assessorName) {
+        uniqueAssessors.set(r.assessorId, r.assessorName);
+      }
+    });
+    return Array.from(uniqueAssessors.entries()).map(([id, name]) => ({
+      id,
+      name,
+    }));
+  }, [results]);
+
+  // Filter results
   const filtered = useMemo(() => {
-    return allResults.filter((r) => {
-      const student = mockStudents.find((s) => s.id === r.studentId);
-      if (filterCompetency !== "All" && r.competency !== filterCompetency)
+    if (!results) return [];
+
+    return results.filter((r) => {
+      // Filter by status
+      if (filterStatus !== "All" && r.resultStatusName !== filterStatus)
         return false;
-      if (filterClass !== "All" && student?.gradeLevel !== filterClass)
+
+      // Filter by assessor
+      if (filterAssessor !== "All" && r.assessorId !== Number(filterAssessor))
         return false;
-      if (filterStatus !== "All" && r.status !== filterStatus) return false;
+
+      // Search by student name, course name, or assessor name
       if (search.trim()) {
         const q = search.toLowerCase();
-        const nameMatch = student?.fullName.toLowerCase().includes(q);
-        const codeMatch = student?.code.toLowerCase().includes(q);
-        if (!nameMatch && !codeMatch) return false;
+        const studentMatch = r.studentName?.toLowerCase().includes(q) || false;
+        const courseMatch = r.courseName?.toLowerCase().includes(q) || false;
+        const assessorMatch =
+          r.assessorName?.toLowerCase().includes(q) || false;
+        if (!studentMatch && !courseMatch && !assessorMatch) return false;
       }
+
       return true;
     });
-  }, [allResults, filterCompetency, filterClass, filterStatus, search]);
+  }, [results, filterStatus, filterAssessor, search]);
 
-  const stats = useMemo(
-    () => ({
-      total: allResults.length,
-      submitted: allResults.filter((r) => r.status === "submitted").length,
-      approved: allResults.filter((r) => r.status === "approved").length,
-    }),
-    [allResults],
-  );
+  // Calculate stats
+  const stats = useMemo(() => {
+    if (!results)
+      return { total: 0, passed: 0, notPassed: 0, assessorsCount: 0 };
+
+    const uniqueAssessors = new Set(results.map((r) => r.assessorId));
+
+    return {
+      total: results.length,
+      passed: results.filter((r) => r.resultStatusName === "Pass").length,
+      notPassed: results.filter((r) => r.resultStatusName === "Not Pass")
+        .length,
+      assessorsCount: uniqueAssessors.size,
+    };
+  }, [results]);
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6">
+        <Card className="p-8 text-center">
+          <AlertCircle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
+          <p className="text-amber-600 font-semibold mb-2">
+            Error Loading Results
+          </p>
+          <p className="text-sm text-gray-600 mb-4">{error.message}</p>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-6 space-y-6">
@@ -85,34 +119,42 @@ export default function VerifierResultsPage() {
           Assessment Monitor
         </h1>
         <p className="text-primary-foreground/80 text-sm font-medium tracking-wide">
-          {activeCycle
-            ? `MONITORING: ${activeCycle.name.toUpperCase()}`
-            : "NO ACTIVE CYCLE"}{" "}
-          · ALL CLASSES & COMPETENCIES
+          {roleCtx?.cycleName || "NO ACTIVE CYCLE"} · ALL COMPETENCY RESULTS
         </p>
       </div>
 
-      {/* Summary */}
+      {/* Summary Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           {
             label: "Total Results",
             value: stats.total,
-            color: "text-foreground",
+            color: "text-blue-600",
           },
-          { label: "Pending", value: stats.submitted, color: "text-warning" },
-          { label: "Approved", value: stats.approved, color: "text-success" },
-        ].map((s) => (
+          {
+            label: "Passed",
+            value: stats.passed,
+            color: "text-green-600",
+          },
+          {
+            label: "Not Passed",
+            value: stats.notPassed,
+            color: "text-red-600",
+          },
+          {
+            label: "Assessors",
+            value: stats.assessorsCount,
+            color: "text-purple-600",
+          },
+        ].map(({ label, value, color }) => (
           <Card
-            key={s.label}
-            className="p-5 rounded-[3px] border-2 border-border shadow-sm text-center group hover:border-primary/50 transition-colors"
+            key={label}
+            className="p-5 rounded-[3px] border-2 border-border shadow-sm"
           >
-            <p className={`text-3xl font-bold tracking-tight ${s.color}`}>
-              {s.value}
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">
+              {label}
             </p>
-            <p className="text-[10px] font-bold text-muted-foreground mt-2 uppercase tracking-widest">
-              {s.label}
-            </p>
+            <p className={`text-3xl font-bold ${color}`}>{value}</p>
           </Card>
         ))}
       </div>
@@ -123,46 +165,42 @@ export default function VerifierResultsPage() {
           <div className="relative flex-1 min-w-48">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
             <Input
-              placeholder="Search student..."
+              placeholder="Search by student, course, or assessor..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9 h-9"
+              disabled={isLoading}
             />
           </div>
-          <Select value={filterCompetency} onValueChange={setFilterCompetency}>
-            <SelectTrigger className="w-40 h-9 text-xs">
-              <SelectValue />
+          <Select
+            value={filterAssessor}
+            onValueChange={setFilterAssessor}
+            disabled={isLoading}
+          >
+            <SelectTrigger className="w-48 h-9 text-xs">
+              <SelectValue placeholder="All Assessors" />
             </SelectTrigger>
             <SelectContent>
-              {COMPETENCIES.map((c) => (
-                <SelectItem key={c} value={c}>
-                  {c === "All" ? "All Competencies" : c}
+              <SelectItem value="All">All Assessors</SelectItem>
+              {assessors.map((a) => (
+                <SelectItem key={a.id} value={a.id.toString()}>
+                  {a.name}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          <Select value={filterClass} onValueChange={setFilterClass}>
+          <Select
+            value={filterStatus}
+            onValueChange={setFilterStatus}
+            disabled={isLoading}
+          >
             <SelectTrigger className="w-36 h-9 text-xs">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {CLASSES.map((c) => (
-                <SelectItem key={c} value={c}>
-                  {c === "All" ? "All Classes" : c}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={filterStatus} onValueChange={setFilterStatus}>
-            <SelectTrigger className="w-36 h-9 text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {["All", "submitted", "approved"].map((s) => (
-                <SelectItem key={s} value={s} className="capitalize">
-                  {s === "All" ? "All Statuses" : s}
-                </SelectItem>
-              ))}
+              <SelectItem value="All">All Status</SelectItem>
+              <SelectItem value="Pass">Pass</SelectItem>
+              <SelectItem value="Not Pass">Not Pass</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -170,96 +208,102 @@ export default function VerifierResultsPage() {
 
       {/* Results Table */}
       <Card className="overflow-hidden rounded-[3px] border-2 border-border shadow-sm">
-        <div className="px-6 py-5 border-b-2 border-border bg-card flex items-center justify-between">
-          <h2 className="font-bold text-foreground uppercase tracking-widest text-sm">
-            Results ({filtered.length})
-          </h2>
+        <div className="px-6 py-5 border-b-2 border-border bg-card">
+          <p className="font-bold text-foreground uppercase tracking-widest text-sm">
+            {filtered.length} Result{filtered.length === 1 ? "" : "s"}
+          </p>
         </div>
-        {filtered.length === 0 ? (
-          <div className="p-12 text-center text-gray-400">
-            No results match your filters.
-          </div>
-        ) : (
-          <div className="overflow-x-auto scrollbar-thin">
-            <div className="divide-y divide-gray-50 min-w-[768px]">
+
+        <div className="overflow-x-auto scrollbar-thin">
+          {isLoading ? (
+            <div className="p-12 flex items-center justify-center">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              <span className="ml-3 text-gray-600">Loading results...</span>
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="p-12 text-center">
+              <Users className="w-14 h-14 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500">No assessment results found</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-50 min-w-[640px]">
               {filtered.map((result) => {
-                const student = mockStudents.find(
-                  (s) => s.id === result.studentId,
-                );
-                const assessor = mockUsers.find(
-                  (u) => u.id === result.assessorId,
-                );
-                const avgScore =
-                  Object.values(result.scores).length > 0
-                    ? Math.round(
-                        Object.values(result.scores).reduce(
-                          (a, b) => a + b,
-                          0,
-                        ) / Object.values(result.scores).length,
-                      )
-                    : null;
+                const isPassed = result.resultStatusName === "Pass";
+                const statusColor = isPassed
+                  ? "bg-success/10 text-success border-success/20"
+                  : "bg-destructive/10 text-destructive border-destructive/20";
+
+                const percentage =
+                  result.scorePercentage !== undefined &&
+                  result.scorePercentage !== null
+                    ? result.scorePercentage.toFixed(1)
+                    : result.totalScore && result.maxScore
+                      ? ((result.totalScore / result.maxScore) * 100).toFixed(1)
+                      : "N/A";
 
                 return (
                   <div
                     key={result.id}
-                    className="flex items-center justify-between px-6 py-4 hover:bg-secondary/30 transition-colors group"
+                    onClick={() => router.push(`/verifier/review/${result.id}`)}
+                    className="flex items-center justify-between px-6 py-4 hover:bg-secondary/30 transition-colors group cursor-pointer"
                   >
-                    <div className="flex items-center gap-5">
-                      <div className="w-12 h-12 bg-primary/10 rounded-[3px] border-2 border-primary/20 flex items-center justify-center text-primary font-bold text-sm tracking-wider uppercase shrink-0">
-                        {student?.fullName
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")
-                          .slice(0, 2)}
+                    <div className="flex items-center gap-4 flex-1">
+                      <div className="w-12 h-12 bg-primary/10 rounded-[3px] border-2 border-primary/20 flex items-center justify-center text-primary font-bold text-sm">
+                        {result.id}
                       </div>
-                      <div>
-                        <p className="font-bold text-foreground text-lg group-hover:text-primary transition-colors">
-                          {student?.fullName}
+                      <div className="flex-1">
+                        <p className="font-bold text-foreground group-hover:text-primary transition-colors">
+                          {result.studentName || `Student #${result.studentId}`}
                         </p>
-                        <p className="text-xs font-bold text-muted-foreground tracking-wider uppercase mt-1">
-                          {student?.code}{" "}
-                          <span className="mx-1 text-border">|</span>{" "}
-                          {student?.gradeLevel}{" "}
-                          <span className="mx-1 text-border">|</span>{" "}
-                          {result.competency}{" "}
-                          <span className="mx-1 text-border">|</span> BY{" "}
-                          {assessor?.fullName}
-                          {result.submittedAt &&
-                            ` | ${new Date(result.submittedAt).toLocaleDateString()}`}
+                        <p className="text-xs text-muted-foreground font-medium mt-1">
+                          {result.courseName && (
+                            <span className="inline-flex items-center gap-1">
+                              <span className="font-semibold">
+                                {result.courseName}
+                              </span>
+                              {result.assessorName && (
+                                <>
+                                  <span className="mx-1">·</span>
+                                  <span>Assessed by {result.assessorName}</span>
+                                </>
+                              )}
+                            </span>
+                          )}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {new Date(result.gradedAt).toLocaleDateString()} at{" "}
+                          {new Date(result.gradedAt).toLocaleTimeString()}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4">
-                      {avgScore !== null && (
-                        <span
-                          className={`text-xl font-bold tracking-tight ${avgScore >= 70 ? "text-success" : avgScore >= 50 ? "text-warning" : "text-destructive"}`}
+
+                    <div className="flex items-center gap-3">
+                      <div className="text-right">
+                        <p
+                          className={`text-2xl font-bold ${isPassed ? "text-success" : "text-destructive"}`}
                         >
-                          {avgScore}%
-                        </span>
-                      )}
-                      <span
-                        className={`text-[10px] font-bold px-2.5 py-1.5 rounded-[3px] border uppercase tracking-widest ${statusBadge[result.status]}`}
+                          {percentage}%
+                        </p>
+                        {result.totalScore !== undefined &&
+                          result.maxScore !== undefined && (
+                            <p className="text-xs text-muted-foreground font-medium">
+                              {result.totalScore}/{result.maxScore} pts
+                            </p>
+                          )}
+                      </div>
+                      <Badge
+                        className={`text-[10px] font-bold px-3 py-1.5 rounded-[3px] border uppercase tracking-widest ${statusColor}`}
                       >
-                        {result.status}
-                      </span>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() =>
-                          router.push(`/verifier/review/${result.id}`)
-                        }
-                        className="h-8 text-xs"
-                      >
-                        <Eye className="w-3 h-3 mr-1" />
-                        View
-                      </Button>
+                        {isPassed ? "Pass" : "Not Pass"}
+                      </Badge>
+                      <Eye className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
                     </div>
                   </div>
                 );
               })}
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </Card>
     </div>
   );
